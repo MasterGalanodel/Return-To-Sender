@@ -24,7 +24,7 @@ public class PlayerMovement : MonoBehaviour
         float moveX = Input.GetAxisRaw("Horizontal");
         float moveY = Input.GetAxisRaw("Vertical");
 
-        // ----- Prevent diagonal movement -----
+        //Prevent diagonal movement
         if (moveX != 0 && moveY != 0)
         {
             // If both are pressed, keep only the stronger one
@@ -33,14 +33,14 @@ public class PlayerMovement : MonoBehaviour
             else
                 moveX = 0;
         }
-        // -------------------------------------
+       
 
         Vector2 movement = new Vector2(moveX, moveY).normalized;
         rb.linearVelocity = movement * moveSpeed;
 
         if (movement.magnitude > 0.1f)
         {
-            // We are moving → save the direction
+            // when we are moving, save the direction 
             lastMoveX = moveX;
             lastMoveY = moveY;
 
