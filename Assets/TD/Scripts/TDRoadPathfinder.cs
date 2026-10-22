@@ -4,8 +4,10 @@ using UnityEngine;
 
 namespace TD
 {
+    // Finds continuous road routes across the hexagonal map using breadth-first search pathfinding.
     public static class TDRoadPathfinder
     {
+        // Generates adjacent cell coordinates for a hexagonal cell, accounting for column-based vertical stagger.
         public static IEnumerable<Vector2Int> Neighbors(Vector2Int cell)
         {
             yield return cell + Vector2Int.up;
@@ -17,6 +19,7 @@ namespace TD
             yield return new Vector2Int(cell.x + 1, cell.y + stagger);
         }
 
+        // Discovers the shortest continuous road path traversing from the left map boundary to the right boundary.
         public static List<Vector2Int> FindRoute(Func<Vector2Int, char> terrainAt)
         {
             var queue = new Queue<Vector2Int>();

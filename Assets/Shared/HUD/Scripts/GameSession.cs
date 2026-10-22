@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace Shared.HUD
 {
+    // Persists player stats across scenes and fires events whenever health or token balances change.
     [DisallowMultipleComponent]
     [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "TD", sourceAssembly: null, sourceClassName: "TDSession")]
     public sealed class GameSession : MonoBehaviour
@@ -18,9 +19,11 @@ namespace Shared.HUD
         public int TowerTokens { get => towerTokens; set => SetValues(health, value, updateTokens); }
         public int UpdateTokens { get => updateTokens; set => SetValues(health, towerTokens, value); }
 
+        // Clears the static singleton reference on domain reload to prevent stale references in the editor.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatic() { Instance = null; }
 
+        // Enforces the persistent singleton instance across scene loads and initializes starting stats.
         private void Awake()
         {
             if (!Application.isPlaying) return;
@@ -35,6 +38,7 @@ namespace Shared.HUD
             ResetForNewGame();
         }
 
+        // Clamps and assigns player stats, raising the Changed event if any values differ.
         public void SetValues(int newHealth, int newTowerTokens, int newUpdateTokens)
         {
             newHealth = Mathf.Max(0, newHealth);
@@ -47,7 +51,10 @@ namespace Shared.HUD
             Changed?.Invoke();
         }
 
+        // Resets health and token balances to their default starting values for a new session.
         public void ResetForNewGame() { SetValues(startingHealth, startingTowerTokens, startingUpdateTokens); }
+
+        // Clears the singleton reference when this instance is destroyed.
         private void OnDestroy() { if (Instance == this) Instance = null; }
     }
 }

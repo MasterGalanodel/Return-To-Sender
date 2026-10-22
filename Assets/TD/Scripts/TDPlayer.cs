@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 
 namespace TD
 {
+    // Handles player movement controls, sub-stepped displacement, and collision sliding across hex grid bounds.
     public sealed class TDPlayer : MonoBehaviour
     {
         private TDMap map;
@@ -12,6 +13,7 @@ namespace TD
         public Vector2Int CurrentCell => map.WorldToLogical(transform.position);
         public Vector2 LastInput { get; private set; }
 
+        // Clones and enables the Player/Move input action and links the player to map and setting references.
         public void Initialize(TDMap hexMap, TDSettings config, InputActionAsset existingInput)
         {
             map = hexMap;
@@ -22,12 +24,14 @@ namespace TD
             move.Enable();
         }
 
+        // Reads directional movement input each frame and advances the player position.
         private void Update()
         {
             LastInput = move.ReadValue<Vector2>();
             MoveStep(LastInput, Time.deltaTime);
         }
 
+        // Moves the player in small steps and tests X/Y axes independently to allow smooth sliding along hex boundaries.
         public void MoveStep(Vector2 input, float deltaTime)
         {
             Vector2 displacement = Vector2.ClampMagnitude(input, 1) * settings.playerSpeed * Mathf.Max(0, deltaTime);
@@ -49,7 +53,10 @@ namespace TD
             }
         }
 
+        // Disables and disposes the cloned movement input action upon player destruction.
         private void OnDestroy() { move?.Disable(); move?.Dispose(); }
+
+        // Draws a wire sphere gizmo around the hex cell currently occupied by the player.
         private void OnDrawGizmos()
         {
             if (!drawCurrentCellGizmo || !map || !map.Terrain) return;

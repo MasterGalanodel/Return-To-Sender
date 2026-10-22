@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace TD
 {
+    // Automates smoke verification for standalone builds by running an automated combat simulation and generating a test report.
     // Inactive during ordinary play. The standalone verification command explicitly opts in.
     public sealed class TDBuildSmoke : MonoBehaviour
     {
@@ -21,6 +22,7 @@ namespace TD
         private string output;
         private bool attemptedCapture, finished;
 
+        // Configures test execution arguments, sets application frame rate, listens for log messages, and places test towers.
         private void Start()
         {
             bootstrap=GetComponent<TDBootstrap>();
@@ -40,12 +42,14 @@ namespace TD
             foreach(int index in new [] {8,16,24}) bootstrap.Placement.TryPlace(bootstrap.Route[index],out _);
         }
 
+        // Records any logged errors or exceptions encountered during the smoke test run.
         private void OnLog(string message,string trace,LogType type)
         {
             if(type==LogType.Error || type==LogType.Exception || type==LogType.Assert)
             {report.errors++;report.error=message;}
         }
 
+        // Monitors active entity counts, triggers screenshot capture during combat, and validates test results upon completion.
         private void Update()
         {
             if(finished) return;
@@ -79,6 +83,7 @@ namespace TD
             Application.Quit(report.passed ? 0 : 1);
         }
 
+        // Renders the prototype camera to an off-screen texture and saves a PNG screenshot of active gameplay.
         private void Capture()
         {
             attemptedCapture=true;
@@ -111,6 +116,8 @@ namespace TD
                 if(pixels) Destroy(pixels);
             }
         }
+
+        // Unregisters the log message listener when the smoke test component is destroyed.
         private void OnDestroy() {Application.logMessageReceived-=OnLog;}
     }
 }

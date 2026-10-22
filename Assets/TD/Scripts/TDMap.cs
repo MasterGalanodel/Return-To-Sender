@@ -6,6 +6,7 @@ using UnityEngine.Tilemaps;
 
 namespace TD
 {
+    // Manages hex tilemap creation, grid conversions between logical cells and Unity space, and terrain query operations.
     public sealed class TDMap : MonoBehaviour
     {
         public const int Columns = 32;
@@ -17,6 +18,7 @@ namespace TD
         public Bounds WorldBounds { get; private set; }
         public string SourceUsed { get; private set; }
 
+        // Validates ASCII map text dimensions and allowed terrain characters, returning an array of row strings.
         public static string[] Parse(string text, string source)
         {
             if (text == null) throw new FormatException($"TD map '{source}': no text provided.");
@@ -35,6 +37,7 @@ namespace TD
             return lines;
         }
 
+        // Retrieves map data from either an external file in the editor or the packaged TextAsset.
         public static string[] Load(TDSettings settings, out string source)
         {
 #if UNITY_EDITOR
@@ -49,6 +52,7 @@ namespace TD
             return Parse(settings.packagedTerrain.text, source);
         }
 
+        // Sets up hexagonal grid geometry, generates tile assets, populates the tilemap, and calculates world bounds.
         public void Initialize(string[] rows, string source, SharedShapes shapes)
         {
             data = rows;
@@ -101,14 +105,28 @@ namespace TD
             Debug.Log($"TD: map loaded from {source}; {Columns} x {Rows}, 576 hex cells.", this);
         }
 
+        // Checks if the specified coordinate falls within the map column and row limits.
         public bool IsValid(Vector2Int cell) => cell.x >= 0 && cell.x < Columns && cell.y >= 0 && cell.y < Rows;
+
+        // Returns the terrain type character at the given logical cell, or null character if outside bounds.
         public char TerrainAt(Vector2Int cell) => IsValid(cell) && data != null ? data[cell.y][cell.x] : '\0';
+
+        // Maps logical column and row coordinates into Unity's swizzled tilemap cell coordinates.
         public static Vector3Int ToUnityCell(Vector2Int logical) => new Vector3Int(-logical.y, logical.x, 0);
+
+        // Converts Unity tilemap cell coordinates back into logical grid coordinates.
         public static Vector2Int FromUnityCell(Vector3Int cell) => new Vector2Int(cell.y, -cell.x);
+
+        // Returns the world-space center position of the specified logical hex cell.
         public Vector3 Center(Vector2Int cell) => terrain.GetCellCenterWorld(ToUnityCell(cell));
+
+        // Converts a world-space position to its corresponding logical hex grid cell.
         public Vector2Int WorldToLogical(Vector3 world) => FromUnityCell(terrain.WorldToCell(world));
+
+        // Determines whether a world-space point lies within the playable map boundaries.
         public bool ContainsWorld(Vector3 world) => IsValid(WorldToLogical(world));
 
+        // Cleans up dynamically created ScriptableObject tile instances to prevent memory leaks.
         private void OnDestroy()
         {
             foreach (Tile tile in tiles)

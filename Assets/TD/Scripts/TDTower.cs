@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace TD
 {
+    // Defensive structure that locates the nearest enemy in range and fires homing projectiles.
     [DefaultExecutionOrder(20)]
     public sealed class TDTower : MonoBehaviour
     {
@@ -11,9 +12,17 @@ namespace TD
         private float cooldown;
         public bool drawRangeGizmo = true;
         public TDEnemy LastTarget { get; private set; }
+
+        // Assigns the configuration parameters governing range, fire rate, and projectile stats.
         public void Initialize(TDSettings config) { settings = config; }
+
+        // Links the tower to the active world simulation to begin acquiring targets and firing.
         public void EnableCombat(TDWorld context) { world=context; }
+
+        // Steps tower firing logic each frame based on delta time.
         private void Update() { Step(Time.deltaTime); }
+
+        // Updates firing cooldown, searches for the closest enemy within range, and launches a projectile when ready.
         public void Step(float deltaTime)
         {
             if(world==null) return;
@@ -24,6 +33,8 @@ namespace TD
             world.FireProjectile(transform.position,LastTarget);
             cooldown=1/settings.towerFireRate;
         }
+
+        // Finds the closest alive enemy within the tower's targeting radius.
         public TDEnemy NearestEnemy()
         {
             TDEnemy nearest=null;
@@ -36,6 +47,8 @@ namespace TD
             }
             return nearest;
         }
+
+        // Draws a yellow wireframe circle in the Scene view to visualize the tower's targeting range.
         private void OnDrawGizmosSelected()
         {
             if(!drawRangeGizmo || !settings) return;

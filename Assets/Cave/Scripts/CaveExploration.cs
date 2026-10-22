@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 
 namespace Cave
 {
+    // Manages the cave exploration phase, handling scene initialization, camera framing, and the transition into Tower Defense.
     [DisallowMultipleComponent]
     [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "TD", sourceAssembly: null, sourceClassName: "TDCaveExploration")]
     public sealed class CaveExploration : MonoBehaviour
@@ -24,6 +25,7 @@ namespace Cave
         public bool Transitioning { get; private set; }
         public string InitializationError { get; private set; }
 
+        // Validates scene references and build settings, ensures the shared HUD exists, initializes the player, and frames the initial camera view.
         private void Start()
         {
             try
@@ -46,8 +48,10 @@ namespace Cave
             }
         }
 
+        // Updates the camera position after movement each frame while exploration is actively running.
         private void LateUpdate() { if (Initialized && !Transitioning) UpdateCamera(); }
 
+        // Configures letterboxing/pillarboxing for a fixed 16:9 aspect ratio and clamps camera tracking within room bounds.
         public void UpdateCamera()
         {
             const float aspect = 16f / 9;
@@ -68,6 +72,7 @@ namespace Cave
             caveCamera.transform.position = new Vector3(center, 0, -10);
         }
 
+        // Disables the player and initiates an asynchronous scene transition to the Tower Defense scene when the exit is reached.
         public void ReachExit()
         {
             if (!Initialized || Transitioning) return;

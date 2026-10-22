@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace TD
 {
+    // Guides a homing projectile toward an enemy target and applies damage upon continuous swept collision detection.
     [DefaultExecutionOrder(30)]
     public sealed class TDProjectile : MonoBehaviour
     {
@@ -12,9 +13,14 @@ namespace TD
         private float age;
         private int spawnFrame;
         public bool Finished { get; private set; }
+
+        // Sets the simulation context, locked target enemy, and birth frame for collision evaluation.
         public void Initialize(TDWorld context, TDEnemy selected) { world=context; target=selected; spawnFrame=Time.frameCount; }
+
+        // Advances projectile flight each frame based on delta time.
         private void Update() { Step(Time.deltaTime); }
 
+        // Translates the projectile toward its target, checks swept circular collisions against active enemies, and triggers damage on hit.
         public void Step(float deltaTime)
         {
             if (Finished) return;
@@ -45,6 +51,7 @@ namespace TD
             else transform.position=end;
         }
 
+        // Performs continuous 2D swept circle intersection testing between moving positions.
         public static bool SweepCircle(Vector2 relativeStart, Vector2 relativeEnd, float radius, out float fraction)
         {
             double sx=relativeStart.x, sy=relativeStart.y;
@@ -63,6 +70,7 @@ namespace TD
             return true;
         }
 
+        // Unregisters the projectile from active simulation and destroys its GameObject.
         private void Finish()
         {
             if(Finished) return;
@@ -70,6 +78,8 @@ namespace TD
             world.RemoveProjectile(this);
             Destroy(gameObject);
         }
+
+        // Ensures the projectile is cleanly removed from the simulation context if destroyed externally.
         private void OnDestroy() { if(!Finished && world!=null) world.RemoveProjectile(this); Finished=true; }
     }
 }

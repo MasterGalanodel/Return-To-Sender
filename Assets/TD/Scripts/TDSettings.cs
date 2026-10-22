@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace TD
 {
+    // ScriptableObject asset defining balance parameters and map configurations for Tower Defense gameplay.
     [CreateAssetMenu(menuName = "TD/Prototype Settings")]
     public sealed class TDSettings : ScriptableObject
     {
@@ -21,6 +22,7 @@ namespace TD
         public bool preferExternalMapInEditor = true;
         public string externalMapPath = @"E:\Miles\assets\arab_32x18.txt";
 
+        // Confirms that all speed, range, rate, damage, health, interval, and zoom settings are positive and finite numbers.
         public void Validate()
         {
             float[] values = { playerSpeed, towerRange, towerFireRate, projectileSpeed,

@@ -6,6 +6,7 @@ using UnityEngine.InputSystem;
 
 namespace TD
 {
+    // Orchestrates the staged initialization of all Tower Defense subsystems including the map, pathfinding, player, and combat.
     [DisallowMultipleComponent]
     public sealed class TDBootstrap : MonoBehaviour
     {
@@ -26,6 +27,7 @@ namespace TD
         public bool Initialized { get; private set; }
         public string InitializationError { get; private set; }
 
+        // Starts prototype initialization and adds the build smoke test runner if requested via command-line flags.
         private void Start()
         {
             bool initialized=InitializePrototype();
@@ -36,6 +38,7 @@ namespace TD
             }
         }
 
+        // Executes sequential startup stages to instantiate the map, route, player, camera follower, tower placement, and spawner.
         public bool InitializePrototype()
         {
             if(Initialized) return true;
@@ -93,6 +96,7 @@ namespace TD
             }
         }
 
+        // Loads terrain data, creates the hex map grid, and initializes the TDMap component.
         public void InitializeMap()
         {
             string[] rows = TDMap.Load(settings, out string source);
@@ -107,14 +111,17 @@ namespace TD
             map.Initialize(rows, source, shapes);
         }
 
+        // Disposes active simulation world entities when the bootstrap object is destroyed.
         private void OnDestroy() { World?.Dispose(); }
 
+        // Computes and caches the shortest road route across the map using pathfinding.
         public void InitializeRoute()
         {
             route = TDRoadPathfinder.FindRoute(map.TerrainAt);
             Debug.Log($"TD: cached shortest road route ({route.Count} cells).", this);
         }
 
+        // Draws yellow route path lines between cell centers in the Scene view.
         private void OnDrawGizmos()
         {
             if (!drawRouteGizmo || !map || !map.Terrain || route == null) return;
