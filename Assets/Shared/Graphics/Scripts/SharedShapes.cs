@@ -8,8 +8,25 @@ namespace Shared.Graphics
         public Sprite circle;
         public Sprite triangle;
         public Sprite hex;
+        [Header("Gameplay sprites")]
+        public Sprite player;
+        public Sprite enemy;
+        public Sprite tower;
         public Material unlitMaterial;
         public Material terrainMaterial;
+
+        // Imported art has different pixel sizes; retain aspect ratios while matching gameplay dimensions.
+        public static float ActorScale(Sprite sprite, float height)
+        {
+            if (!sprite) throw new System.InvalidOperationException("A gameplay sprite is missing. Run Tools/Shared/Graphics/Assign Gameplay Sprites.");
+            return height / sprite.bounds.size.y;
+        }
+
+        public SpriteRenderer CreateActor(string objectName, Sprite sprite, Vector3 position,
+            float height, int sortingOrder, Transform parent)
+        {
+            return Create(objectName, sprite, Color.white, position, ActorScale(sprite, height), sortingOrder, parent);
+        }
 
         public SpriteRenderer Create(string objectName, Sprite sprite, Color color,
             Vector3 position, float size, int sortingOrder, Transform parent)

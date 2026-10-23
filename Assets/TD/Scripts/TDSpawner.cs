@@ -17,6 +17,7 @@ namespace TD
         // Accumulates delta time and triggers enemy spawns whenever the configured spawn interval is reached.
         public void Step(float deltaTime)
         {
+            if (world == null || !world.CanSimulate) return;
             elapsed += Mathf.Max(0, deltaTime);
             while (elapsed >= world.Settings.spawnInterval)
             { elapsed -= world.Settings.spawnInterval; world.SpawnEnemy(); }

@@ -31,7 +31,7 @@ namespace TD
         // Moves the enemy toward successive waypoints within the movement budget and retires it upon reaching the exit.
         public void MoveStep(float deltaTime)
         {
-            if (!IsAlive) return;
+            if (!IsAlive || !world.CanSimulate) return;
             PreviousPosition=transform.position;
             MovedFrame=Time.frameCount;
             float budget = world.Settings.enemySpeed * Mathf.Max(0, deltaTime);

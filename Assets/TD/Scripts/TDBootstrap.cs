@@ -1,13 +1,16 @@
 using Shared.Graphics;
+using Shared.HUD;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 namespace TD
 {
     // Orchestrates the staged initialization of all Tower Defense subsystems including the map, pathfinding, player, and combat.
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-100)]
     public sealed class TDBootstrap : MonoBehaviour
     {
         public TDSettings settings;
@@ -26,6 +29,21 @@ namespace TD
         public TDSpawner Spawner { get; private set; }
         public bool Initialized { get; private set; }
         public string InitializationError { get; private set; }
+        public bool Transitioning { get; private set; }
+
+        private void Update()
+        {
+            if (!Initialized || Transitioning) return;
+            var session = GameSession.Instance;
+            if (!session || session.HasEnded || session.PhaseComplete) return;
+            session.StepPhase(Time.deltaTime);
+            if (!session.TowerDefenseExpired || session.HasEnded) return;
+            Transitioning = true;
+            // Retreating enemies never count as escapes. Towers are reconstructed from the session next visit.
+            World?.Retreat();
+            if (session.FinishTowerDefense())
+                SceneManager.LoadSceneAsync(Cave.CaveExploration.ScenePath, LoadSceneMode.Single);
+        }
 
         // Starts prototype initialization and adds the build smoke test runner if requested via command-line flags.
         private void Start()
@@ -47,6 +65,11 @@ namespace TD
                 if (!settings || !shapes || !prototypeCamera)
                     throw new InvalidOperationException("TD: setup references are missing; run Tools/TD/Setup Prototype.");
                 settings.Validate();
+                SharedHud.EnsureExists();
+                if (!GameSession.Instance) throw new InvalidOperationException("TD: shared HUD session is missing.");
+                if (!Application.CanStreamedLevelBeLoaded(Cave.CaveExploration.ScenePath))
+                    throw new InvalidOperationException("TD: Cave scene must be enabled in Build Settings.");
+                GameSession.Instance.BeginPhase(GameSession.PlayPhase.TowerDefense);
                 if (stage >= 2) InitializeMap();
                 if (stage >= 3) InitializeRoute();
                 prototypeCamera.orthographic = true;
@@ -54,12 +77,10 @@ namespace TD
                 if (map) prototypeCamera.transform.position = new Vector3(map.WorldBounds.center.x, map.WorldBounds.center.y, -10);
                 if (stage >= 4)
                 {
-                    var renderer = shapes.Create("Player", shapes.circle, Color.white,
+                    var renderer = shapes.CreateActor("Player", shapes.player,
                         map.Center(new Vector2Int(TDMap.Columns/2, TDMap.Rows/2)), .42f, 30, transform);
                     Player = renderer.gameObject.AddComponent<TDPlayer>();
                     Player.Initialize(map, settings, existingInputActions);
-                    var outline = shapes.Create("Player Contrast Ring", shapes.circle, new Color(.08f,.08f,.08f),
-                        Player.transform.position, .48f/.42f, 29, Player.transform);
                 }
                 if (stage >= 5)
                 {
@@ -73,6 +94,7 @@ namespace TD
                     building.transform.SetParent(transform, false);
                     Placement = building.GetComponent<TDTowerPlacement>();
                     Placement.Initialize(map, Player, settings, shapes);
+                    Placement.RestoreTowers();
                 }
                 if (stage >= 7)
                 {

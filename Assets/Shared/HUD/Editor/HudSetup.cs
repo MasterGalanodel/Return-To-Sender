@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -17,6 +18,8 @@ namespace Shared.HUD.Editor
             AssetDatabase.Refresh();
             var font = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
             if (!font) throw new System.InvalidOperationException("Import bundled TMP essentials before HUD setup.");
+            var healthIcon = LoadIcon("health");
+            var buildIcon = LoadIcon("build");
             // Load and edit the owned prefab in place on subsequent runs.
             bool existing = File.Exists(PrefabPath);
             var root = existing ? PrefabUtility.LoadPrefabContents(PrefabPath)
@@ -44,19 +47,54 @@ namespace Shared.HUD.Editor
                 panel.anchorMin = panel.anchorMax = new Vector2(.5f, 1);
                 panel.pivot = new Vector2(.5f, 1);
                 panel.anchoredPosition = new Vector2(0, -18);
-                panel.sizeDelta = new Vector2(320, 140);
+                panel.sizeDelta = new Vector2(400, 150);
                 var background = GetOrAdd<UnityEngine.UI.Image>(panel.gameObject);
                 background.color = new Color(.035f, .055f, .075f, .94f);
                 background.raycastTarget = false;
                 var layout = GetOrAdd<UnityEngine.UI.VerticalLayoutGroup>(panel.gameObject);
                 layout.padding = new RectOffset(18, 18, 13, 13);
-                layout.spacing = 3;
+                layout.spacing = 6;
                 layout.childControlWidth = layout.childControlHeight = true;
                 layout.childForceExpandWidth = true; layout.childForceExpandHeight = false;
-                var health = Row(panel, "Health", "HEALTH", "50", new Color(1, .52f, .48f), font);
-                var towers = Row(panel, "TowerTokens", "TOWER TOKENS", "2", new Color(.46f, .89f, .76f), font);
-                var updates = Row(panel, "UpdateTokens", "UPDATE TOKENS", "10", new Color(1, .8f, .4f), font);
-                hud.Configure(health, towers, updates, safe);
+                var header = Child(panel, "DayAndTime");
+                header.SetAsFirstSibling();
+                GetOrAdd<UnityEngine.UI.LayoutElement>(header.gameObject).preferredHeight = 28;
+                var headerLayout = GetOrAdd<UnityEngine.UI.HorizontalLayoutGroup>(header.gameObject);
+                headerLayout.childControlWidth = headerLayout.childControlHeight = true;
+                headerLayout.childForceExpandWidth = true;
+                headerLayout.childForceExpandHeight = true;
+                headerLayout.spacing = 12;
+                var days = Text(header, "Day", "DAY 1/6", font, 20, Color.white);
+                days.alignment = TextAlignmentOptions.MidlineLeft;
+                var timer = Text(header, "Time", "CAVE 0/60s", font, 20, Color.white);
+                timer.alignment = TextAlignmentOptions.MidlineRight;
+                var health = Row(panel, "Health", "HEALTH", "50", new Color(1, .52f, .48f), font, healthIcon);
+                var towers = Row(panel, "TowerTokens", "BUILD TOKENS", "2", new Color(.46f, .89f, .76f), font, buildIcon);
+                var obsoleteUpdates = panel.Find("UpdateTokens");
+                if (obsoleteUpdates) Object.DestroyImmediate(obsoleteUpdates.gameObject);
+                var result = Child(safe, "RunResult");
+                result.anchorMin = result.anchorMax = result.pivot = new Vector2(.5f, .5f);
+                result.anchoredPosition = Vector2.zero;
+                result.sizeDelta = new Vector2(680, 180);
+                var resultBackground = GetOrAdd<UnityEngine.UI.Image>(result.gameObject);
+                resultBackground.color = new Color(.035f, .055f, .075f, .96f);
+                resultBackground.raycastTarget = false;
+                var resultLayout = GetOrAdd<UnityEngine.UI.VerticalLayoutGroup>(result.gameObject);
+                resultLayout.padding = new RectOffset(24, 24, 20, 20);
+                resultLayout.spacing = 8;
+                resultLayout.childControlWidth = resultLayout.childControlHeight = true;
+                resultLayout.childForceExpandWidth = true;
+                resultLayout.childForceExpandHeight = false;
+                var title = Text(result, "Title", "GAME OVER", font, 40, Color.white);
+                title.alignment = TextAlignmentOptions.Center;
+                title.fontStyle = FontStyles.Bold;
+                GetOrAdd<UnityEngine.UI.LayoutElement>(title.gameObject).preferredHeight = 52;
+                var detail = Text(result, "Detail", "", font, 21, new Color(.82f, .86f, .9f));
+                detail.alignment = TextAlignmentOptions.Center;
+                detail.textWrappingMode = TextWrappingModes.Normal;
+                GetOrAdd<UnityEngine.UI.LayoutElement>(detail.gameObject).preferredHeight = 76;
+                result.gameObject.SetActive(false);
+                hud.Configure(health, towers, safe, days, timer, result, title, detail);
                 PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
             }
             finally
@@ -65,7 +103,7 @@ namespace Shared.HUD.Editor
                 else Object.DestroyImmediate(root);
             }
             AssetDatabase.SaveAssets();
-            Debug.Log("Shared HUD: prefab ready (50 health, 2 tower tokens, 10 update tokens).");
+            Debug.Log("Shared HUD: prefab ready (50 health, 2 build tokens).");
         }
 
         private static T GetOrAdd<T>(GameObject go) where T : Component
@@ -79,7 +117,15 @@ namespace Shared.HUD.Editor
             child.transform.SetParent(parent, false);
             return child.GetComponent<RectTransform>();
         }
-        private static TextMeshProUGUI Row(Transform parent, string name, string label, string value, Color color, TMP_FontAsset font)
+        private static Sprite LoadIcon(string name)
+        {
+            // The supplied PNGs contain sliced sprites; load their sprite sub-assets without changing the imports.
+            var sprite = AssetDatabase.LoadAllAssetsAtPath("Assets/Shared/HUD/Art/" + name + ".png").OfType<Sprite>().FirstOrDefault();
+            if (!sprite) throw new System.InvalidOperationException("Missing HUD sprite: " + name);
+            return sprite;
+        }
+
+        private static TextMeshProUGUI Row(Transform parent, string name, string label, string value, Color color, TMP_FontAsset font, Sprite icon = null)
         {
             var row = Child(parent, name);
             GetOrAdd<UnityEngine.UI.LayoutElement>(row.gameObject).preferredHeight = 36;
@@ -87,10 +133,23 @@ namespace Shared.HUD.Editor
             layout.childControlWidth = layout.childControlHeight = true;
             layout.childForceExpandWidth = false; layout.childForceExpandHeight = true;
             layout.spacing = 8;
+            if (icon)
+            {
+                var iconRect = Child(row, "Icon");
+                iconRect.SetAsFirstSibling();
+                var image = GetOrAdd<UnityEngine.UI.Image>(iconRect.gameObject);
+                image.sprite = icon;
+                image.preserveAspect = true;
+                image.raycastTarget = false;
+                var iconSize = GetOrAdd<UnityEngine.UI.LayoutElement>(iconRect.gameObject);
+                iconSize.preferredWidth = iconSize.minWidth = 32;
+                iconSize.preferredHeight = 32;
+                iconSize.flexibleWidth = 0;
+            }
             var title = Text(row, "Label", label, font, 16, new Color(.82f, .86f, .9f));
             title.alignment = TextAlignmentOptions.MidlineLeft;
             var labelSize = GetOrAdd<UnityEngine.UI.LayoutElement>(title.gameObject);
-            labelSize.preferredWidth = 210; labelSize.flexibleWidth = 1;
+            labelSize.preferredWidth = 200; labelSize.flexibleWidth = 1;
             var number = Text(row, "Value", value, font, 26, color);
             number.fontStyle = FontStyles.Bold;
             number.alignment = TextAlignmentOptions.MidlineRight;

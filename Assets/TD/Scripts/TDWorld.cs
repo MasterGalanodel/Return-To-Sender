@@ -1,4 +1,5 @@
 using Shared.Graphics;
+using Shared.HUD;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -20,6 +21,7 @@ namespace TD
         public int KilledCount { get; private set; }
         public int ShotsFired { get; private set; }
         public int Hits { get; private set; }
+        public bool CanSimulate => !GameSession.Instance || GameSession.Instance.IsPhaseActive(GameSession.PlayPhase.TowerDefense);
 
         // Initializes the simulation world with configuration settings, shape renderers, and the enemy route.
         public TDWorld(TDSettings settings, SharedShapes shapes, Transform actorsRoot, Vector3[] route)
@@ -28,7 +30,7 @@ namespace TD
         // Instantiates and tracks a new enemy actor at the beginning of the road route.
         public TDEnemy SpawnEnemy()
         {
-            var renderer = Shapes.Create("Enemy", Shapes.circle, Color.black, Route[0], .4f, 20, ActorsRoot);
+            var renderer = Shapes.CreateActor("Enemy", Shapes.enemy, Route[0], .4f, 20, ActorsRoot);
             var enemy = renderer.gameObject.AddComponent<TDEnemy>();
             enemy.Initialize(this);
             enemies.Add(enemy);
@@ -40,7 +42,12 @@ namespace TD
         public void RemoveEnemy(TDEnemy enemy, bool exited)
         {
             if (!enemies.Remove(enemy)) return;
-            if (exited) ExitedCount++; else KilledCount++;
+            if (exited)
+            {
+                ExitedCount++;
+                if (CanSimulate && GameSession.Instance) GameSession.Instance.Damage(1);
+            }
+            else KilledCount++;
         }
 
         // Instantiates and tracks a homing projectile directed at a specific target enemy.
@@ -62,5 +69,15 @@ namespace TD
 
         // Clears all active enemy and projectile tracking lists upon world teardown.
         public void Dispose() { enemies.Clear(); projectiles.Clear(); }
+
+        public void Retreat()
+        {
+            foreach (var enemy in enemies)
+                if (enemy) { enemy.gameObject.SetActive(false); Object.Destroy(enemy.gameObject); }
+            foreach (var projectile in projectiles)
+                if (projectile) { projectile.gameObject.SetActive(false); Object.Destroy(projectile.gameObject); }
+            enemies.Clear();
+            projectiles.Clear();
+        }
     }
 }

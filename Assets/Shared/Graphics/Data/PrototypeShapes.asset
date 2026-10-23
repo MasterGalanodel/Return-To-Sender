@@ -15,5 +15,8 @@ MonoBehaviour:
   circle: {fileID: 21300000, guid: 0252a920934ad4c4c815ba8966c783db, type: 3}
   triangle: {fileID: 21300000, guid: 13463d9c31ad1454eaadece620d9aed6, type: 3}
   hex: {fileID: 21300000, guid: 135f30990eadf134ebaa26790da70e69, type: 3}
+  player: {fileID: 3804419739914296938, guid: aef5909adb082b341917bd4df19a3bb3, type: 3}
+  enemy: {fileID: 4801227835787818748, guid: de07a8ab86c819842bd05b4c680a3a7f, type: 3}
+  tower: {fileID: -5119980863986964875, guid: 6ba8b6bf8dd38f64a97a011e7a33b0e2, type: 3}
   unlitMaterial: {fileID: 2100000, guid: 3af2bb8dae58e97479520170e4e48e86, type: 2}
   terrainMaterial: {fileID: 2100000, guid: 860aa9952f5089d45a51b6b2c659db2c, type: 2}

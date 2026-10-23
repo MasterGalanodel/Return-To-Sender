@@ -1,6 +1,7 @@
 using Shared.Graphics;
 using System;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -31,6 +32,7 @@ namespace TD.Editor
                 EditorUtility.SetDirty(settings);
             }
             var shapes = LoadOrCreate<SharedShapes>(ShapesPath);
+            AssignGameplaySprites(shapes);
             shapes.circle = CreateSprite("Circle", 256, 256, (x, y) => x * x + y * y <= 0.25f);
             shapes.triangle = CreateSprite("Triangle", 256, 256, (x, y) => y >= -0.5f && y <= 0.5f && Mathf.Abs(x) <= (0.5f - y) * 0.5f);
             shapes.hex = CreateSprite("FlatTopHex", 512, 444, (x, y) => Mathf.Abs(y) <= Mathf.Sqrt(3) / 4f && Mathf.Abs(x) <= 0.5f - Mathf.Abs(y) / Mathf.Sqrt(3));
@@ -106,6 +108,32 @@ namespace TD.Editor
             EditorSceneManager.SaveScene(scene, ScenePath);
             Selection.activeGameObject = bootstrap.gameObject;
             Debug.Log("TD: prototype setup complete (owned scene only).");
+        }
+
+        [MenuItem("Tools/Shared/Graphics/Assign Gameplay Sprites")]
+        public static void AssignGameplaySprites()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+                throw new InvalidOperationException("Stop Play before assigning gameplay sprites.");
+            var shapes = AssetDatabase.LoadAssetAtPath<SharedShapes>(ShapesPath);
+            if (!shapes) throw new InvalidOperationException("Shared graphics asset is missing. Run Tools/TD/Setup Prototype.");
+            AssignGameplaySprites(shapes);
+            AssetDatabase.SaveAssets();
+        }
+
+        private static void AssignGameplaySprites(SharedShapes shapes)
+        {
+            shapes.player = GameplaySprite("mc");
+            shapes.enemy = GameplaySprite("enemy1");
+            shapes.tower = GameplaySprite("castle");
+            EditorUtility.SetDirty(shapes);
+        }
+
+        private static Sprite GameplaySprite(string name)
+        {
+            var sprite = AssetDatabase.LoadAllAssetsAtPath("Assets/Shared/Graphics/Art/" + name + ".png").OfType<Sprite>().FirstOrDefault();
+            if (!sprite) throw new InvalidOperationException("Missing gameplay sprite: " + name);
+            return sprite;
         }
 
         private static T LoadOrCreate<T>(string path) where T : ScriptableObject
