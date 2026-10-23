@@ -19,7 +19,6 @@ namespace Cave
         private readonly List<Collider2D> ignoredPlatforms = new List<Collider2D>();
         private float horizontalInput;
         private float jumpBufferedUntil = -1;
-        private float lastGroundedAt = -1;
         private float restoreCollisionsAt;
         private bool dropBuffered, jumpReleased;
         private int lastSafeStep;
@@ -77,7 +76,6 @@ namespace Cave
             IsGrounded = ground != null;
             if (IsGrounded)
             {
-                lastGroundedAt = Time.time;
                 lastSafeStep = ground.StepIndex;
             }
             Vector2 velocity = body.linearVelocity;
@@ -88,14 +86,13 @@ namespace Cave
                     DropThrough(ground.GetComponent<Collider2D>());
                     velocity.y = -2;
                     jumpBufferedUntil = -1;
-                    lastGroundedAt = -1;
                     IsGrounded = false;
                 }
-                else if (!dropBuffered && Time.time - lastGroundedAt <= .1f && ignoredPlatforms.Count == 0)
+                else if (!dropBuffered)
                 {
+                    // Each press refreshes lift, including while falling or already airborne.
                     velocity.y = cave.jumpSpeed;
                     jumpBufferedUntil = -1;
-                    lastGroundedAt = -1;
                     IsGrounded = false;
                 }
             }
@@ -131,7 +128,7 @@ namespace Cave
             {
                 var platform = ignoredPlatforms[i];
                 if (!platform) { ignoredPlatforms.RemoveAt(i); continue; }
-                if (!force && (Time.time < restoreCollisionsAt || bodyCollider.bounds.max.y > platform.bounds.min.y)) continue;
+                if (!force && (Time.time < restoreCollisionsAt || bodyCollider.bounds.Intersects(platform.bounds))) continue;
                 Physics2D.IgnoreCollision(bodyCollider, platform, false);
                 ignoredPlatforms.RemoveAt(i);
             }
@@ -144,7 +141,7 @@ namespace Cave
             body.linearVelocity = Vector2.zero;
             horizontalInput = 0;
             jumpBufferedUntil = -1;
-            lastGroundedAt = -1;
+            dropBuffered = jumpReleased = false;
             IsGrounded = false;
         }
 

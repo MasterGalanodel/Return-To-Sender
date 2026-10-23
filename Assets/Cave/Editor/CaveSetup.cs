@@ -77,7 +77,10 @@ namespace Cave.Editor
                     rock.transform.localRotation = Quaternion.Euler(0, 0, side < 0 ? -90 : 90);
                 }
             }
-            Rect(shaft, "Shaft Cap", solid, shapes, new Vector2(0, 4.8f), new Vector2(15, 1.5f), new Color(.025f, .045f, .07f), -5);
+            var cap = Rect(shaft, "Shaft Cap", solid, shapes, new Vector2(0, 4.8f), new Vector2(15, 1.5f), new Color(.025f, .045f, .07f), -5);
+            var capCollider = GetOrAdd<BoxCollider2D>(cap.gameObject);
+            capCollider.size = Vector2.one;
+            capCollider.sharedMaterial = frictionless;
             var platformsRoot = Child(environment, "Platforms");
             cave.platforms = new CavePlatform[CaveExploration.StepCount];
             for (int i = 0; i < CaveExploration.StepCount; i++)
@@ -118,15 +121,15 @@ namespace Cave.Editor
                     trigger.isTrigger = true;
                     trigger.radius = .34f;
                     GetOrAdd<CavePickup>(pickup.gameObject).Configure("step-" + i,
-                        build ? GameSession.PickupType.Build : GameSession.PickupType.Health, build ? 1 : 5, icon.transform);
-                    Text(pickup, "Reward Label", build ? "+1 BUILD" : "+5 HP", font, 2.2f,
+                        build ? GameSession.PickupType.Build : GameSession.PickupType.Health, 1, icon.transform);
+                    Text(pickup, "Reward Label", build ? "+1 BUILD" : "+1 HP", font, 2.2f,
                         new Vector2(0, .48f), new Vector2(2, .4f), build ? new Color(.55f, 1, .82f) : new Color(1, .64f, .6f));
                 }
             }
-            Text(environment, "Controls", "A/D   MOVE\nSPACE   JUMP\nS + SPACE   DROP", font, 1.8f,
+            Text(environment, "Controls", "A/D   MOVE\nSPACE   MULTI-JUMP\nS + SPACE   DROP", font, 1.8f,
                 new Vector2(-3.7f, 1.1f), new Vector2(3, 1.1f), new Color(.64f, .79f, .87f));
             var gate = Child(environment, "TD Exit");
-            gate.localPosition = new Vector3(1.3f, CaveExploration.BottomY, 0);
+            gate.localPosition = new Vector3(1.3f, cave.platforms[0].SurfaceY, 0);
             Rect(gate, "Frame", solid, shapes, new Vector2(0, .85f), new Vector2(1.1f, 1.7f), new Color(.12f, .72f, .78f), 8);
             Rect(gate, "Opening", solid, shapes, new Vector2(0, .8f), new Vector2(.78f, 1.5f), new Color(.035f, .12f, .2f), 9);
             Text(gate, "Exit Label", "TD", font, 4.2f, new Vector2(0, 1.05f), new Vector2(1, .7f), Color.white);
@@ -145,7 +148,7 @@ namespace Cave.Editor
             RemoveChild(player.transform, "Black Outline");
             var body = GetOrAdd<Rigidbody2D>(player.gameObject);
             body.bodyType = RigidbodyType2D.Dynamic;
-            body.gravityScale = 2.8f;
+            body.gravityScale = .28f;
             body.linearDamping = 0;
             body.constraints = RigidbodyConstraints2D.FreezeRotation;
             body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
@@ -180,7 +183,7 @@ namespace Cave.Editor
                 if (entry.path != CaveExploration.ScenePath && entry.path != CaveExploration.TDScenePath) scenes.Add(entry);
             EditorBuildSettings.scenes = scenes.ToArray();
             Selection.activeGameObject = cave.gameObject;
-            Debug.Log("Vertical Cave ready: 40 one-way platforms, 8 health pickups (+5) and 4 build pickups (+1) per day. A/D move, Space jump, Down + Space drop.");
+            Debug.Log("Low-gravity Cave ready: 40 one-way platforms, an exit on the starting platform, 8 health pickups (+1) and 4 build pickups (+1) per day. A/D move, Space multi-jump, Down + Space drop.");
         }
 
         private static T GetOrAdd<T>(GameObject go) where T : Component
