@@ -25,7 +25,7 @@ namespace TD
         // Updates firing cooldown, searches for the closest enemy within range, and launches a projectile when ready.
         public void Step(float deltaTime)
         {
-            if(world==null) return;
+            if(world==null || !world.CanSimulate) return;
             cooldown=Mathf.Max(0,cooldown-Mathf.Max(0,deltaTime));
             if(cooldown>0) return;
             LastTarget=NearestEnemy();

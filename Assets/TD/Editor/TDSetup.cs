@@ -1,6 +1,7 @@
 using Shared.Graphics;
 using System;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -31,6 +32,7 @@ namespace TD.Editor
                 EditorUtility.SetDirty(settings);
             }
             var shapes = LoadOrCreate<SharedShapes>(ShapesPath);
+            AssignGameplaySprites(shapes);
             shapes.circle = CreateSprite("Circle", 256, 256, (x, y) => x * x + y * y <= 0.25f);
             shapes.triangle = CreateSprite("Triangle", 256, 256, (x, y) => y >= -0.5f && y <= 0.5f && Mathf.Abs(x) <= (0.5f - y) * 0.5f);
             shapes.hex = CreateSprite("FlatTopHex", 512, 444, (x, y) => Mathf.Abs(y) <= Mathf.Sqrt(3) / 4f && Mathf.Abs(x) <= 0.5f - Mathf.Abs(y) / Mathf.Sqrt(3));
@@ -98,7 +100,6 @@ namespace TD.Editor
             if (bootstrap.stage >= 2)
             {
                 bootstrap.InitializeMap();
-                if (bootstrap.stage >= 3) bootstrap.InitializeRoute();
                 camera.transform.position = new Vector3(bootstrap.Map.WorldBounds.center.x, bootstrap.Map.WorldBounds.center.y, -10);
             }
             EditorUtility.SetDirty(bootstrap);
@@ -106,6 +107,49 @@ namespace TD.Editor
             EditorSceneManager.SaveScene(scene, ScenePath);
             Selection.activeGameObject = bootstrap.gameObject;
             Debug.Log("TD: prototype setup complete (owned scene only).");
+        }
+
+        [MenuItem("Tools/Shared/Graphics/Assign Gameplay Sprites")]
+        public static void AssignGameplaySprites()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+                throw new InvalidOperationException("Stop Play before assigning gameplay sprites.");
+            var shapes = AssetDatabase.LoadAssetAtPath<SharedShapes>(ShapesPath);
+            if (!shapes) throw new InvalidOperationException("Shared graphics asset is missing. Run Tools/TD/Setup Prototype.");
+            AssignGameplaySprites(shapes);
+            AssetDatabase.SaveAssets();
+        }
+
+        private static void AssignGameplaySprites(SharedShapes shapes)
+        {
+            shapes.player = GameplaySprite("mc");
+            shapes.enemy = GameplaySprite("enemy1");
+            shapes.tower = GameplaySprite("castle");
+            shapes.buildReward = SpriteAt("Assets/Shared/HUD/Art/build.png");
+            shapes.claw = SpriteAt("Assets/Shared/Claw/Art/claw.png");
+            shapes.destroyedFrames = FramesAt("Assets/Shared/Graphics/Art/destroyed_sprite_sheet.png");
+            EditorUtility.SetDirty(shapes);
+        }
+
+        // Loads every slice of a sprite sheet in play order, by the numeric suffix Unity gives each slice.
+        private static Sprite[] FramesAt(string path)
+        {
+            var frames = AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>()
+                .OrderBy(sprite => int.Parse(sprite.name.Substring(sprite.name.LastIndexOf('_') + 1))).ToArray();
+            if (frames.Length == 0) throw new InvalidOperationException("Missing sliced sprite sheet: " + path);
+            return frames;
+        }
+
+        private static Sprite GameplaySprite(string name)
+        {
+            return SpriteAt("Assets/Shared/Graphics/Art/" + name + ".png");
+        }
+
+        private static Sprite SpriteAt(string path)
+        {
+            var sprite = AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>().FirstOrDefault();
+            if (!sprite) throw new InvalidOperationException("Missing gameplay sprite: " + path);
+            return sprite;
         }
 
         private static T LoadOrCreate<T>(string path) where T : ScriptableObject

@@ -23,7 +23,7 @@ namespace TD
         // Translates the projectile toward its target, checks swept circular collisions against active enemies, and triggers damage on hit.
         public void Step(float deltaTime)
         {
-            if (Finished) return;
+            if (Finished || !world.CanSimulate) return;
             if (!target || !target.IsAlive) { Finish(); return; }
             age += Mathf.Max(0, deltaTime);
             if (age >= world.Settings.projectileLifetime) { Finish(); return; }

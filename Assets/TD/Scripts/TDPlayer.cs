@@ -34,6 +34,8 @@ namespace TD
         // Moves the player in small steps and tests X/Y axes independently to allow smooth sliding along hex boundaries.
         public void MoveStep(Vector2 input, float deltaTime)
         {
+            var session = Shared.HUD.GameSession.Instance;
+            if (session && !session.IsPhaseActive(Shared.HUD.GameSession.PlayPhase.TowerDefense)) return;
             Vector2 displacement = Vector2.ClampMagnitude(input, 1) * settings.playerSpeed * Mathf.Max(0, deltaTime);
             int steps = Mathf.Max(1, Mathf.CeilToInt(displacement.magnitude / .15f));
             Vector3 step = new Vector3(displacement.x, displacement.y, 0) / steps;
