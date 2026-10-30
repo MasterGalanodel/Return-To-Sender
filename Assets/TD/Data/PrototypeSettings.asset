@@ -21,24 +21,7 @@ MonoBehaviour:
   enemySpeed: 1
   enemyHealth: 3
   spawnInterval: 2
-  towerDefenseSeconds: 60
-  maxEnemiesPerDay:
-  - 3
-  - 6
-  - 9
-  - 12
-  - 15
-  - 18
-  buildRewardDropChance: 0.2
-  buildRewardDropRadius: 2
-  buildRewardCollectRadius: 0.6
   cameraZoom: 3.9
   packagedTerrain: {fileID: 4900000, guid: 5b20f8bc5d849e140be8f9cb3b102a08, type: 3}
-  preferExternalMapInEditor: 0
+  preferExternalMapInEditor: 1
   externalMapPath: E:\Miles\assets\arab_32x18.txt
-  desertTiles:
-  - {fileID: 11400000, guid: 16286f145c478ab47ac7d793312e0857, type: 2}
-  - {fileID: 11400000, guid: c055d2829f9211d4c82da9ff7dcdfdf0, type: 2}
-  - {fileID: 11400000, guid: 37118fae202d130478c4b6111f3c971f, type: 2}
-  desertNoiseScale: 0.08
-  desertNoiseOffset: {x: 1000, y: 1000}

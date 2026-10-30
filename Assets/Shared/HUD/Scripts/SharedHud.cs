@@ -11,18 +11,11 @@ namespace Shared.HUD
         public const string ResourceName = "SharedHud";
         [SerializeField] private TextMeshProUGUI healthValue;
         [SerializeField] private TextMeshProUGUI towerValue;
-        [SerializeField] private TextMeshProUGUI dayValue;
-        [SerializeField] private TextMeshProUGUI timerValue;
-        [SerializeField] private RectTransform resultPanel;
-        [SerializeField] private TextMeshProUGUI resultTitle;
-        [SerializeField] private TextMeshProUGUI resultDetail;
+        [SerializeField] private TextMeshProUGUI updateValue;
         [SerializeField] private RectTransform safeArea;
         private GameSession session;
         private Rect lastSafeArea;
         private Vector2Int lastScreenSize;
-        private float buildWarningUntil;
-        private static readonly Color WarningColor = new Color(1, .25f, .23f);
-        private static readonly Color BuildColor = new Color(.46f, .89f, .76f);
 
         // Automatically ensures the shared HUD is instantiated after scene load during play mode.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -42,13 +35,8 @@ namespace Shared.HUD
         }
 
         // Assigns UI text element references and the safe area container, typically used during scene setup.
-        public void Configure(TextMeshProUGUI health, TextMeshProUGUI towers,
-            RectTransform safeAreaRect, TextMeshProUGUI days, TextMeshProUGUI timer,
-            RectTransform result, TextMeshProUGUI title, TextMeshProUGUI detail)
-        {
-            healthValue = health; towerValue = towers; safeArea = safeAreaRect;
-            dayValue = days; timerValue = timer; resultPanel = result; resultTitle = title; resultDetail = detail;
-        }
+        public void Configure(TextMeshProUGUI health, TextMeshProUGUI towers, TextMeshProUGUI updates, RectTransform safeAreaRect)
+        { healthValue = health; towerValue = towers; updateValue = updates; safeArea = safeAreaRect; }
 
         // Subscribes to session state changes, renders the initial values, and applies the current safe area.
         private void OnEnable()
@@ -56,49 +44,26 @@ namespace Shared.HUD
             if (!Application.isPlaying) return;
             session = GetComponent<GameSession>();
             session.Changed += Refresh;
-            session.BuildDenied += WarnBuild;
             Refresh();
             UpdateSafeArea();
         }
 
         // Unsubscribes from session change notifications when disabled.
-        private void OnDisable()
-        {
-            if (!session) return;
-            session.Changed -= Refresh;
-            session.BuildDenied -= WarnBuild;
-        }
-
-        private void WarnBuild() { buildWarningUntil = Time.unscaledTime + 1.2f; }
+        private void OnDisable() { if (session) session.Changed -= Refresh; }
 
         // Updates all on-screen UI text elements with the latest health and token values from the session.
         private void Refresh()
         {
-            if (!session) return;
-            if (healthValue) healthValue.SetText("{0}", session.Health);
-            if (towerValue) towerValue.SetText("{0}", session.TowerTokens);
-            if (dayValue) dayValue.SetText("DAY {0}/6", session.Day);
-            if (timerValue)
-            {
-                string phase = session.Phase == GameSession.PlayPhase.TowerDefense ? "TD" : "CAVE";
-                timerValue.text = $"{phase} {Mathf.FloorToInt(session.ElapsedSeconds)}/{session.PhaseDurationSeconds}s";
-                timerValue.color = session.IsOvertime ? WarningColor : Color.white;
-            }
-            if (resultPanel) resultPanel.gameObject.SetActive(session.HasEnded);
-            if (resultTitle) resultTitle.text = session.Outcome == GameSession.RunOutcome.Victory ? "VICTORY" : "GAME OVER";
-            if (resultDetail) resultDetail.text = $"Day {session.Day}/6  |  HP {session.Health}\n{session.ResultMessage}";
+            if (!healthValue || !towerValue || !updateValue) return;
+            healthValue.SetText("{0}", session.Health);
+            towerValue.SetText("{0}", session.TowerTokens);
+            updateValue.SetText("{0}", session.UpdateTokens);
         }
 
         // Detects screen resolution or safe area changes each frame to keep UI anchors aligned.
         private void LateUpdate()
         {
             if (lastSafeArea != Screen.safeArea || lastScreenSize != new Vector2Int(Screen.width, Screen.height)) UpdateSafeArea();
-            if (session && towerValue)
-            {
-                towerValue.color = !session.HasEnded && Time.unscaledTime < buildWarningUntil
-                    ? Color.Lerp(WarningColor, Color.white, .5f + .5f * Mathf.Sin(Time.unscaledTime * 24))
-                    : session.TowerTokens == 0 ? WarningColor : BuildColor;
-            }
         }
 
         // Adjusts RectTransform anchors to constrain HUD content within the physical screen safe area.

@@ -1,36 +1,18 @@
-  D   D   D   D   D   D   D   D   D   D   D   W   D   D   D   D
-D   D   D   D   D   D   D   D   D   D   D   W   D   D   D   D
-  D   D   D   D   D   D   D   D   D   D   D   W   D   D   D   D
-D   D   D   D   D   D   D   D   D   D   D   W   C   D   D   D
-  D   D   D   D   D   D   D   D   D   D   W   W   D   D   D   D
-D   D   D   D   D   D   D   D   D   D   D   W   D   D   D   D
-  D   D   W   D   D   D   D   D   D   C   W   D   D   D   D   D
-D   D   W   D   D   D   D   D   D   D   W   W   D   D   D   D
-  D   C   W   D   D   D   D   D   D   C   W   D   D   D   D   D
-D   D   W   D   D   D   D   D   D   D   W   D   D   D   D   D
-  D   D   D   R   R   R   D   D   D   D   W   D   D   D   D   D
-D   D   D   D   R   R   D   D   D   D   W   W   D   D   D   D
-  D   D   D   R   D   R   R   D   D   D   W   W   D   D   R   R
-D   D   D   D   D   D   R   R   D   D   D   W   D   D   R   R
-  D   D   R   R   D   D   D   D   D   D   D   W   R   R   D   D
-D   D   R   R   D   D   D   R   D   D   D   W   W   R   R   D
-  R   R   D   B   B   B   B   R   R   D   D   W   R   D   D   D
-R   R   R   D   B   B   B   R   R   D   D   D   W   D   D   D
-  D   D   D   B   B   B   B   D   R   R   R   R   R   D   D   D
-D   D   D   D   B   B   B   D   D   R   R   R   R   D   D   D
-  D   D   D   B   B   B   B   D   D   D   W   W   D   D   D   D
-D   D   D   D   D   D   W   D   D   D   D   W   D   D   D   D
-  D   D   D   D   D   W   D   D   D   D   W   D   D   D   D   D
-D   D   D   D   D   W   W   D   D   D   W   W   D   D   D   D
-  D   D   D   D   D   W   D   D   D   W   W   D   D   D   D   D
-D   D   D   D   D   D   D   D   D   C   W   D   D   D   D   D
-  D   D   D   D   D   D   D   D   D   W   D   D   D   D   W   D
-D   D   D   D   D   D   D   D   D   C   W   D   D   D   W   C
-  D   D   D   D   D   D   D   D   D   W   W   D   D   D   W   D
-D   D   D   D   D   D   D   D   D   D   W   D   D   D   W   W
-  D   D   D   D   D   D   D   D   D   D   W   D   D   D   W   D
-D   D   D   D   D   D   D   D   D   D   W   W   D   D   D   D
-  D   D   D   D   D   D   D   D   D   D   W   C   D   D   D   D
-D   D   D   D   D   D   D   D   D   D   D   W   D   D   D   D
-  D   D   D   D   D   D   D   D   D   D   W   D   D   D   D   D
-D   D   D   D   D   D   D   D   D   D   W   W   D   D   D   D
+DDDDDDDDDDDDDDDDDDDDDDWWDDDDDDDD
+DDDDDDDDDDDDDDDDDDDDDDWWCDDDDDDD
+DDDDDDDDDDDDDDDDDDDDDWWWDDDDDDDD
+DDDDWWDDDDDDDDDDDDDCWWWDDDDDDDDD
+DDDCWWDDDDDDDDDDDDDCWWDDDDDDDDDD
+DDDDDDDRRRRRDDDDDDDDWWWDDDDDDDDD
+DDDDDDDRDDDRRRRDDDDDDWWWDDDDRRRR
+DDDDRRRRDDDDDDRDDDDDDDWWWRRRRDDD
+RRRRRDDDDDDDDDRRRRDDDDDWWRDDDDDD
+DDDDDDDDDDDDDDDDDRRRRRRRRRDDDDDD
+DDDDDDDDDDDWWDDDDDDDDWWWDDDDDDDD
+DDDDDDDDDDWWWDDDDDDDWWWDDDDDDDDD
+DDDDDDDDDDDWDDDDDDCWWWDDDDDDDDDD
+DDDDDDDDDDDDDDDDDDCWWDDDDDDDWWCD
+DDDDDDDDDDDDDDDDDDDWWWDDDDDDWWWD
+DDDDDDDDDDDDDDDDDDDDWWWDDDDDDWDD
+DDDDDDDDDDDDDDDDDDDDDWWCDDDDDDDD
+DDDDDDDDDDDDDDDDDDDDWWWDDDDDDDDD
