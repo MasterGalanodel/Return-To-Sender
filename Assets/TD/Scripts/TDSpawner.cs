@@ -1,9 +1,8 @@
-using Shared.HUD;
 using UnityEngine;
 
 namespace TD
 {
-    // Spawns enemies at regular time intervals, capped by the per-day maximum alive at once.
+    // Automatically spawns enemies at the start of the road at regular time intervals.
     public sealed class TDSpawner : MonoBehaviour
     {
         private TDWorld world;
@@ -15,22 +14,12 @@ namespace TD
         // Advances the spawn countdown timer using delta time.
         private void Update() { Step(Time.deltaTime); }
 
-        // Most enemies allowed alive at once today, from TDSettings.maxEnemiesPerDay.
-        public int MaxEnemies => world.Settings.MaxEnemiesOnDay(GameSession.Instance ? GameSession.Instance.Day : 1);
-
-        // Accumulates delta time and triggers enemy spawns whenever the configured spawn interval is reached,
-        // as long as fewer than today's maximum are alive.
+        // Accumulates delta time and triggers enemy spawns whenever the configured spawn interval is reached.
         public void Step(float deltaTime)
         {
-            if (world == null || !world.CanSimulate) return;
             elapsed += Mathf.Max(0, deltaTime);
             while (elapsed >= world.Settings.spawnInterval)
-            {
-                // At the cap the timer waits, so the next enemy appears as soon as one dies or reaches the Base.
-                if (world.Enemies.Count >= MaxEnemies) { elapsed = world.Settings.spawnInterval; return; }
-                elapsed -= world.Settings.spawnInterval;
-                world.SpawnEnemy();
-            }
+            { elapsed -= world.Settings.spawnInterval; world.SpawnEnemy(); }
         }
     }
 }
