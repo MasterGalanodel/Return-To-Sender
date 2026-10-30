@@ -9,10 +9,11 @@ The top-center HUD shows day and scene elapsed time on one line, followed by Hea
 ## Rules
 
 - Health and token balances persist across both scenes. They are session state, not a disk save.
-- Cave has no time limit. Its timer turns red after 60 seconds and keeps counting. Lose 1 HP at 65 seconds, then every additional five seconds until exiting.
+- Cave's normal exploration time is 20 seconds. Its timer turns red after 20 seconds and keeps counting. Lose 1 HP at 25 seconds, then every additional five seconds until exiting.
 - Reaching the Cave exit starts that day's TD phase with a fresh timer.
 - Each successfully placed tower costs 1 build token. Occupied/invalid cells cost nothing. At zero tokens the number is red; a valid construction attempt flashes it and places no tower.
 - Each enemy reaching the TD exit costs 1 shared HP. Killed or retreating enemies cost no HP.
+- Killed TD enemies explode and have a 20% chance to drop a +1 build token within 2 world units. Stand within 0.6 units and press **C** to retrieve one with the claw; tokens are credited when retrieval finishes. See `Assets/TD/EnemyRewards.md`.
 - TD ends at 60 seconds. Remaining enemies/projectiles disappear without escape damage. The next day reuses the same Cave scene, starting at its entrance. Tower cells persist, and towers return to their original positions on the next TD visit without another charge.
 - Zero HP immediately freezes gameplay and shows **GAME OVER**.
 - Finishing day 6 with **more than 80 HP** freezes gameplay and shows **VICTORY**. At 80 HP or less it shows **GAME OVER**. There is no restart button; stop and restart Play mode for a fresh run.
@@ -38,8 +39,10 @@ Balances cannot become negative. Session values stop changing after the result. 
 
 `TryCollectCavePickup` records rewards by day and pickup ID. `ResetForNewGame()` restores defaults, day 1 and time scale, and clears stored tower cells and pickup history. Restart/reload the gameplay scene as well when using it outside a fresh Play session.
 
+The phase durations are independent constants in `GameSession`: `CaveSeconds = 20` and `TowerDefenseSeconds = 60`. `PhaseDurationSeconds` supplies the current phase's HUD duration; Cave overtime penalties still repeat every five seconds.
+
 ## Verification
 
 Start Play from Cave, then run **Tools > Shared > HUD > Verify Run Loop (Play Mode)**. This deliberately changes the running session and ends on a frozen game-over screen. The report is written to `Logs/RunLoopChecks.json`.
 
-The 86 checks cover exact overtime thresholds, red clock text, deadline rounding, six-day advancement, strict 80/81 HP outcomes, icons, valid/invalid placement costs, zero-token feedback, enemy escape/death damage, real scene transitions, restored tower occupancy, timer resets, and frozen gameplay/results. Unity compilation and the runtime error console were also checked.
+The 90 checks cover separate 20-second Cave and 60-second TD durations and HUD labels, exact overtime thresholds, red clock text, deadline rounding, six-day advancement, strict 80/81 HP outcomes, icons, valid/invalid placement costs, zero-token feedback, enemy escape/death damage, real scene transitions, restored tower occupancy, timer resets, and frozen gameplay/results. Unity compilation and the runtime error console were also checked.

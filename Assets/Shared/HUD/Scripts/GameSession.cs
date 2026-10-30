@@ -13,8 +13,10 @@ namespace Shared.HUD
         public enum RunOutcome { Playing, Victory, Defeat }
         public enum PickupType { Health, Build }
         public const int TotalDays = 6;
-        public const int PhaseSeconds = 60;
+        public const int CaveSeconds = 20;
         public const int CaveOvertimeSeconds = 5;
+        // Set from the TD settings asset (TDSettings.towerDefenseSeconds) before each TD phase begins.
+        public static int TowerDefenseSeconds { get; private set; } = 60;
         public const int VictoryHealth = 80;
 
         public static GameSession Instance { get; private set; }
@@ -39,8 +41,9 @@ namespace Shared.HUD
         public bool HasEnded => Outcome != RunOutcome.Playing;
         public bool PhaseComplete { get; private set; }
         public float ElapsedSeconds => (float)elapsedSeconds;
-        public bool TowerDefenseExpired => Phase == PlayPhase.TowerDefense && elapsedSeconds >= PhaseSeconds;
-        public bool IsOvertime => Phase == PlayPhase.Cave && elapsedSeconds > PhaseSeconds;
+        public int PhaseDurationSeconds => Phase == PlayPhase.TowerDefense ? TowerDefenseSeconds : CaveSeconds;
+        public bool TowerDefenseExpired => Phase == PlayPhase.TowerDefense && elapsedSeconds >= TowerDefenseSeconds;
+        public bool IsOvertime => Phase == PlayPhase.Cave && elapsedSeconds > CaveSeconds;
         public string ResultMessage { get; private set; }
         public IReadOnlyList<Vector2Int> TowerCells => towerCells;
 
@@ -82,6 +85,8 @@ namespace Shared.HUD
             Changed?.Invoke();
         }
 
+        public static void ConfigureTowerDefenseSeconds(int seconds) { TowerDefenseSeconds = Math.Max(1, seconds); }
+
         public void BeginPhase(PlayPhase phase)
         {
             if (HasEnded) return;
@@ -93,7 +98,7 @@ namespace Shared.HUD
         }
 
         public bool IsPhaseActive(PlayPhase phase) => !HasEnded && !PhaseComplete && Phase == phase
-            && (phase != PlayPhase.TowerDefense || elapsedSeconds < PhaseSeconds);
+            && (phase != PlayPhase.TowerDefense || elapsedSeconds < TowerDefenseSeconds);
 
         // Scene controllers tick before movement/combat, so the TD deadline wins over same-frame escapes.
         public void StepPhase(float deltaTime)
@@ -103,10 +108,10 @@ namespace Shared.HUD
             int previousSecond = (int)elapsedSeconds;
             bool wasOvertime = IsOvertime;
             elapsedSeconds += deltaTime;
-            if (Phase == PlayPhase.TowerDefense) elapsedSeconds = Math.Min(elapsedSeconds, PhaseSeconds);
+            if (Phase == PlayPhase.TowerDefense) elapsedSeconds = Math.Min(elapsedSeconds, TowerDefenseSeconds);
             if (Phase == PlayPhase.Cave)
             {
-                int due = (int)Math.Max(0, Math.Floor((elapsedSeconds - PhaseSeconds) / CaveOvertimeSeconds));
+                int due = (int)Math.Max(0, Math.Floor((elapsedSeconds - CaveSeconds) / CaveOvertimeSeconds));
                 int damage = due - overtimePenalties;
                 overtimePenalties = due;
                 if (damage > 0) Damage(damage);
@@ -124,7 +129,7 @@ namespace Shared.HUD
         // Returns true only when another visit to the same Cave scene should begin.
         public bool FinishTowerDefense()
         {
-            if (HasEnded || PhaseComplete || Phase != PlayPhase.TowerDefense || elapsedSeconds < PhaseSeconds) return false;
+            if (HasEnded || PhaseComplete || Phase != PlayPhase.TowerDefense || elapsedSeconds < TowerDefenseSeconds) return false;
             PhaseComplete = true;
             if (Day == TotalDays)
             {

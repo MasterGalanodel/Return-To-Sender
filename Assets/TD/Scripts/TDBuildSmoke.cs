@@ -39,7 +39,8 @@ namespace TD
             Application.targetFrameRate=60;
             Application.logMessageReceived+=OnLog;
             started=Time.realtimeSinceStartup;
-            foreach(int index in new [] {8,16,24}) bootstrap.Placement.TryPlace(bootstrap.Route[index],out _);
+            var baseCells=bootstrap.Map.BaseCells();
+            for(int i=0;i<3 && i<baseCells.Count;i++) bootstrap.Placement.TryPlace(baseCells[i*baseCells.Count/3],out _);
         }
 
         // Records any logged errors or exceptions encountered during the smoke test run.

@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 
 namespace TD
 {
-    // Handles user input and mechanics for placing defensive towers onto valid grid cells.
+    // Handles user input and mechanics for placing defensive towers onto Base (B) cells.
     public sealed class TDTowerPlacement : MonoBehaviour
     {
         private TDMap map;
@@ -31,13 +31,13 @@ namespace TD
         // Attempts to construct a new tower on the cell currently occupied by the player.
         public bool TryPlaceCurrent() => TryPlace(player.CurrentCell, out _);
 
-        // Instantiates and registers a tower at the given hex cell if the cell is valid and empty.
+        // Instantiates and registers a tower at the given hex cell if it is an empty Base cell.
         public bool TryPlace(Vector2Int cell, out TDTower tower)
         {
             tower = null;
             var session = GameSession.Instance;
             if (!session || !session.IsPhaseActive(GameSession.PlayPhase.TowerDefense)) return false;
-            if (!map.IsValid(cell) || towers.ContainsKey(cell)) return false;
+            if (!CanBuildOn(cell)) return false;
             if (!session.TrySpendBuildToken()) return false;
             tower = CreateTower(cell);
             session.RememberTower(cell);
@@ -50,8 +50,11 @@ namespace TD
             var session = GameSession.Instance;
             if (!session) return;
             foreach (var cell in session.TowerCells)
-                if (map.IsValid(cell) && !towers.ContainsKey(cell)) CreateTower(cell);
+                if (CanBuildOn(cell)) CreateTower(cell);
         }
+
+        // Towers may only stand on unoccupied Base cells.
+        public bool CanBuildOn(Vector2Int cell) => map.TerrainAt(cell) == TDMap.Base && !towers.ContainsKey(cell);
 
         private TDTower CreateTower(Vector2Int cell)
         {

@@ -81,7 +81,7 @@ namespace Shared.HUD
             if (timerValue)
             {
                 string phase = session.Phase == GameSession.PlayPhase.TowerDefense ? "TD" : "CAVE";
-                timerValue.text = $"{phase} {Mathf.FloorToInt(session.ElapsedSeconds)}/60s";
+                timerValue.text = $"{phase} {Mathf.FloorToInt(session.ElapsedSeconds)}/{session.PhaseDurationSeconds}s";
                 timerValue.color = session.IsOvertime ? WarningColor : Color.white;
             }
             if (resultPanel) resultPanel.gameObject.SetActive(session.HasEnded);

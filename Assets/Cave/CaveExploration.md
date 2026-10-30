@@ -16,7 +16,7 @@ Walk or fall into an icon to collect it. Each pickup can be collected **once per
 
 ## Run rules
 
-The Cave timer turns red after 60 seconds. Exploration can continue, but costs 1 HP at 65 seconds and every five seconds afterward. TD lasts 60 seconds, then returns to this same Cave at the entrance on the next day. The run lasts six days. Zero HP ends it immediately; finishing day 6 requires more than 80 HP to win. Results freeze gameplay and display the outcome.
+The Cave timer turns red after 20 seconds. Exploration can continue, but costs 1 HP at 25 seconds and every five seconds afterward. TD has its own 60-second duration, then returns to this same Cave at the entrance on the next day. The run lasts six days. Zero HP ends it immediately; finishing day 6 requires more than 80 HP to win. Results freeze gameplay and display the outcome.
 
 The player uses `Assets/Shared/Graphics/Art/mc.png` in both scenes; TD enemies use `enemy1.png` and towers use `castle.png` from the same folder.
 

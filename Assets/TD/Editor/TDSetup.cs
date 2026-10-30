@@ -100,7 +100,6 @@ namespace TD.Editor
             if (bootstrap.stage >= 2)
             {
                 bootstrap.InitializeMap();
-                if (bootstrap.stage >= 3) bootstrap.InitializeRoute();
                 camera.transform.position = new Vector3(bootstrap.Map.WorldBounds.center.x, bootstrap.Map.WorldBounds.center.y, -10);
             }
             EditorUtility.SetDirty(bootstrap);
@@ -126,13 +125,30 @@ namespace TD.Editor
             shapes.player = GameplaySprite("mc");
             shapes.enemy = GameplaySprite("enemy1");
             shapes.tower = GameplaySprite("castle");
+            shapes.buildReward = SpriteAt("Assets/Shared/HUD/Art/build.png");
+            shapes.claw = SpriteAt("Assets/Shared/Claw/Art/claw.png");
+            shapes.destroyedFrames = FramesAt("Assets/Shared/Graphics/Art/destroyed_sprite_sheet.png");
             EditorUtility.SetDirty(shapes);
+        }
+
+        // Loads every slice of a sprite sheet in play order, by the numeric suffix Unity gives each slice.
+        private static Sprite[] FramesAt(string path)
+        {
+            var frames = AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>()
+                .OrderBy(sprite => int.Parse(sprite.name.Substring(sprite.name.LastIndexOf('_') + 1))).ToArray();
+            if (frames.Length == 0) throw new InvalidOperationException("Missing sliced sprite sheet: " + path);
+            return frames;
         }
 
         private static Sprite GameplaySprite(string name)
         {
-            var sprite = AssetDatabase.LoadAllAssetsAtPath("Assets/Shared/Graphics/Art/" + name + ".png").OfType<Sprite>().FirstOrDefault();
-            if (!sprite) throw new InvalidOperationException("Missing gameplay sprite: " + name);
+            return SpriteAt("Assets/Shared/Graphics/Art/" + name + ".png");
+        }
+
+        private static Sprite SpriteAt(string path)
+        {
+            var sprite = AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>().FirstOrDefault();
+            if (!sprite) throw new InvalidOperationException("Missing gameplay sprite: " + path);
             return sprite;
         }
 

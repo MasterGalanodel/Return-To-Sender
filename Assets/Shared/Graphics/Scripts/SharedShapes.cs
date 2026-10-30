@@ -12,6 +12,12 @@ namespace Shared.Graphics
         public Sprite player;
         public Sprite enemy;
         public Sprite tower;
+        [Header("Enemy rewards")]
+        public Sprite buildReward;
+        public Sprite claw;
+        [Header("Effects")]
+        [Tooltip("Enemy destroy animation, in play order (destroyed_sprite_sheet_0 .. _6).")]
+        public Sprite[] destroyedFrames;
         public Material unlitMaterial;
         public Material terrainMaterial;
 

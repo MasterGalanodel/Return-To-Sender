@@ -66,7 +66,7 @@ namespace Shared.HUD.Editor
                 headerLayout.spacing = 12;
                 var days = Text(header, "Day", "DAY 1/6", font, 20, Color.white);
                 days.alignment = TextAlignmentOptions.MidlineLeft;
-                var timer = Text(header, "Time", "CAVE 0/60s", font, 20, Color.white);
+                var timer = Text(header, "Time", $"CAVE 0/{GameSession.CaveSeconds}s", font, 20, Color.white);
                 timer.alignment = TextAlignmentOptions.MidlineRight;
                 var health = Row(panel, "Health", "HEALTH", "50", new Color(1, .52f, .48f), font, healthIcon);
                 var towers = Row(panel, "TowerTokens", "BUILD TOKENS", "2", new Color(.46f, .89f, .76f), font, buildIcon);
