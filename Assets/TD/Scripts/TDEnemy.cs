@@ -18,6 +18,11 @@ namespace TD
         public Vector3 PreviousPosition { get; private set; }
         public int MovedFrame { get; private set; } = -1;
 
+        private const float WalkFps = 10;
+        private SpriteRenderer body;
+        private Sprite[] frames;
+        private float animationOffset;
+
         // Initializes enemy health, spawn position, and the Base point it walks toward.
         public void Initialize(TDWorld context, Vector3 start, Vector3 target)
         {
@@ -25,10 +30,21 @@ namespace TD
             Health = world.Settings.enemyHealth;
             transform.position = start;
             Target = target;
+            body = GetComponent<SpriteRenderer>();
+            frames = world.Shapes.enemyFrames;
+            // The art faces right; enemies heading left are mirrored. Random phase keeps crowds out of step.
+            if (body) body.flipX = target.x < start.x;
+            animationOffset = Random.value;
         }
 
         // Steps enemy movement toward the Base each frame using delta time.
-        private void Update() { MoveStep(Time.deltaTime); }
+        private void Update()
+        {
+            MoveStep(Time.deltaTime);
+            if (!body || frames == null || frames.Length == 0 || !world.CanSimulate) return;
+            Sprite frame = frames[(int)((Time.time + animationOffset) * WalkFps) % frames.Length];
+            if (frame) body.sprite = frame;
+        }
 
         // Moves straight toward the target within the movement budget and retires the enemy on its first Base cell.
         public void MoveStep(float deltaTime)

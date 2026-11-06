@@ -10,7 +10,15 @@ namespace Shared.Graphics
         public Sprite hex;
         [Header("Gameplay sprites")]
         public Sprite player;
+        [Tooltip("TD player standing still (character_sprite_sheet row 2, columns 1-4).")]
+        public Sprite[] playerIdleFrames;
+        [Tooltip("TD player walking down, left or right (row 2, columns 5-8).")]
+        public Sprite[] playerWalkFrames;
+        [Tooltip("TD player walking up (row 3, column 1).")]
+        public Sprite[] playerUpFrames;
         public Sprite enemy;
+        [Tooltip("TD enemy walk loop, art facing right (enemy1_sprite_sheet row 1: slices 0 and 2-8).")]
+        public Sprite[] enemyFrames;
         public Sprite tower;
         [Header("Enemy rewards")]
         public Sprite buildReward;

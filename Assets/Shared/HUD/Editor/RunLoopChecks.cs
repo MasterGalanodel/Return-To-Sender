@@ -76,9 +76,9 @@ namespace Shared.HUD.Editor
                         Check(GameSession.Instance == session && session.Day == 1 && session.Health == 47,
                             "Cave to TD preserves session, day and HP");
                         firstCell = td.Player.CurrentCell;
-                        var baseCells = td.Map.BaseCells();
-                        baseCells.Remove(firstCell);
-                        secondCell = baseCells[0];
+                        var fenceCells = td.Map.FenceCells();
+                        fenceCells.Remove(firstCell);
+                        secondCell = fenceCells[0];
                         Check(td.Placement.TryPlace(firstCell, out _) && session.TowerTokens == 1, "First tower costs one token");
                         Check(!td.Placement.TryPlace(firstCell, out _) && session.TowerTokens == 1,
                             "Occupied cells do not spend tokens");
@@ -88,7 +88,7 @@ namespace Shared.HUD.Editor
                         bool denied = false;
                         Action onDenied = () => denied = true;
                         session.BuildDenied += onDenied;
-                        Check(!td.Placement.TryPlace(baseCells[1], out _) && denied,
+                        Check(!td.Placement.TryPlace(fenceCells[1], out _) && denied,
                             "Zero tokens block construction and signal the HUD warning");
                         session.BuildDenied -= onDenied;
                         Check(td.Placement.TowerCount == 2, "Rejected placement creates no tower");

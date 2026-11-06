@@ -72,13 +72,19 @@ namespace TD
                 if (stage >= 2) InitializeMap();
                 prototypeCamera.orthographic = true;
                 prototypeCamera.orthographicSize = settings.cameraZoom;
+                var flash = prototypeCamera.GetComponent<TDDamageFlash>();
+                if (!flash) flash = prototypeCamera.gameObject.AddComponent<TDDamageFlash>();
+                flash.Initialize(shapes.unlitMaterial);
                 if (map) prototypeCamera.transform.position = new Vector3(map.WorldBounds.center.x, map.WorldBounds.center.y, -10);
                 if (stage >= 4)
                 {
-                    var renderer = shapes.CreateActor("Player", shapes.player,
+                    // Animated frames share one box size, so sizing from the first idle frame keeps every frame the same scale.
+                    bool animated = shapes.playerIdleFrames != null && shapes.playerIdleFrames.Length > 0 && shapes.playerIdleFrames[0];
+                    var renderer = shapes.CreateActor("Player", animated ? shapes.playerIdleFrames[0] : shapes.player,
                         map.Center(PlayerStartCell()), .42f, 30, transform);
                     Player = renderer.gameObject.AddComponent<TDPlayer>();
                     Player.Initialize(map, settings, existingInputActions);
+                    if (animated) Player.SetAnimation(shapes.playerIdleFrames, shapes.playerWalkFrames, shapes.playerUpFrames);
                 }
                 if (stage >= 5)
                 {
@@ -134,14 +140,16 @@ namespace TD
         // Disposes active simulation world entities when the bootstrap object is destroyed.
         private void OnDestroy() { World?.Dispose(); }
 
-        // Starts the player on the Base cell nearest the Base's middle, so towers can be built right away.
+        // Starts the player on the Fence cell nearest the Base's middle, so towers can be built right away.
         private Vector2Int PlayerStartCell()
         {
-            var cells = map.BaseCells();
-            if (cells.Count == 0) throw new InvalidOperationException("TD: the map has no B (Base) tiles; gameplay startup is disabled.");
+            var baseCells = map.BaseCells();
+            if (baseCells.Count == 0) throw new InvalidOperationException("TD: the map has no B (Base) tiles; gameplay startup is disabled.");
+            var cells = map.FenceCells();
+            if (cells.Count == 0) throw new InvalidOperationException("TD: the map has no F (Fence) tiles, so towers have nowhere to stand.");
             Vector3 middle = Vector3.zero;
-            foreach (var cell in cells) middle += map.Center(cell);
-            middle /= cells.Count;
+            foreach (var cell in baseCells) middle += map.Center(cell);
+            middle /= baseCells.Count;
             Vector2Int best = cells[0];
             foreach (var cell in cells)
                 if ((map.Center(cell)-middle).sqrMagnitude < (map.Center(best)-middle).sqrMagnitude) best = cell;

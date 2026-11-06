@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 
 namespace TD
 {
-    // Handles user input and mechanics for placing defensive towers onto Base (B) cells.
+    // Handles user input for building towers on Fence (F) cells and upgrading the tower the player stands on.
     public sealed class TDTowerPlacement : MonoBehaviour
     {
         private TDMap map;
@@ -31,16 +31,27 @@ namespace TD
         // Attempts to construct a new tower on the cell currently occupied by the player.
         public bool TryPlaceCurrent() => TryPlace(player.CurrentCell, out _);
 
-        // Instantiates and registers a tower at the given hex cell if it is an empty Base cell.
+        // Builds a first-level tower on an empty Fence cell, or upgrades the tower already standing
+        // there to its next level. Each step costs that level's tokens; nothing changes if they fall short.
         public bool TryPlace(Vector2Int cell, out TDTower tower)
         {
             tower = null;
             var session = GameSession.Instance;
             if (!session || !session.IsPhaseActive(GameSession.PlayPhase.TowerDefense)) return false;
+            if (towers.TryGetValue(cell, out TDTower existing))
+            {
+                if (!CanUpgrade(cell)) return false;
+                int next = existing.Level + 1;
+                if (!session.TrySpendBuildTokens(settings.towerLevels[next].cost)) return false;
+                existing.SetLevel(next);
+                session.RememberTower(cell, next);
+                tower = existing;
+                return true;
+            }
             if (!CanBuildOn(cell)) return false;
-            if (!session.TrySpendBuildToken()) return false;
-            tower = CreateTower(cell);
-            session.RememberTower(cell);
+            if (!session.TrySpendBuildTokens(settings.towerLevels[0].cost)) return false;
+            tower = CreateTower(cell, 0);
+            session.RememberTower(cell, 0);
             return true;
         }
 
@@ -50,17 +61,20 @@ namespace TD
             var session = GameSession.Instance;
             if (!session) return;
             foreach (var cell in session.TowerCells)
-                if (CanBuildOn(cell)) CreateTower(cell);
+                if (CanBuildOn(cell)) CreateTower(cell, Mathf.Min(session.TowerLevelAt(cell), settings.towerLevels.Length - 1));
         }
 
-        // Towers may only stand on unoccupied Base cells.
-        public bool CanBuildOn(Vector2Int cell) => map.TerrainAt(cell) == TDMap.Base && !towers.ContainsKey(cell);
+        // Towers may only stand on unoccupied Fence cells.
+        public bool CanBuildOn(Vector2Int cell) => map.TerrainAt(cell) == TDMap.Fence && !towers.ContainsKey(cell);
 
-        private TDTower CreateTower(Vector2Int cell)
+        // True when a tower stands on the cell and has a higher level left to buy.
+        public bool CanUpgrade(Vector2Int cell) => towers.TryGetValue(cell, out TDTower tower) && tower.Level + 1 < settings.towerLevels.Length;
+
+        private TDTower CreateTower(Vector2Int cell, int level)
         {
-            var renderer = shapes.CreateActor("Tower " + cell, shapes.tower, map.Center(cell), .6f, 10, transform);
+            var renderer = shapes.Create("Tower " + cell, settings.towerLevels[level].sprite, Color.white, map.Center(cell), 1, 10, transform);
             var tower = renderer.gameObject.AddComponent<TDTower>();
-            tower.Initialize(settings);
+            tower.Initialize(settings, level);
             if(world!=null) tower.EnableCombat(world);
             towers.Add(cell, tower);
             return tower;

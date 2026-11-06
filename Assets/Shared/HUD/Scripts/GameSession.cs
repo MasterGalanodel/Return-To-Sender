@@ -29,13 +29,18 @@ namespace Shared.HUD
         private int overtimePenalties;
         private float timeScaleBeforeEnd = 1;
         private readonly List<Vector2Int> towerCells = new List<Vector2Int>();
+        private readonly Dictionary<Vector2Int, int> towerLevels = new Dictionary<Vector2Int, int>();
         private readonly HashSet<string> collectedCavePickups = new HashSet<string>();
         public event Action Changed;
         public event Action BuildDenied;
+        // Raised after Damage lowers Health, with the HP actually lost.
+        public event Action<int> Damaged;
         public int Health { get => health; set => SetValues(value, towerTokens, updateTokens); }
         public int TowerTokens { get => towerTokens; set => SetValues(health, value, updateTokens); }
         public int UpdateTokens { get => updateTokens; set => SetValues(health, towerTokens, value); }
         public int Day { get; private set; } = 1;
+        // Rolled once per run so each day's random Cave stays the same when re-entered, but differs between runs.
+        public int RunSeed { get; private set; } = 1;
         public PlayPhase Phase { get; private set; }
         public RunOutcome Outcome { get; private set; }
         public bool HasEnded => Outcome != RunOutcome.Playing;
@@ -144,21 +149,32 @@ namespace Shared.HUD
 
         public void Damage(int amount)
         {
-            if (!HasEnded && amount > 0) Health = Mathf.Max(0, health - amount);
+            if (HasEnded || amount <= 0) return;
+            int before = health;
+            Health = Mathf.Max(0, health - amount);
+            if (health < before) Damaged?.Invoke(before - health);
         }
 
-        public bool TrySpendBuildToken()
+        public bool TrySpendBuildToken() => TrySpendBuildTokens(1);
+
+        // Spends all of amount or none of it; a shortfall signals the HUD warning.
+        public bool TrySpendBuildTokens(int amount)
         {
-            if (HasEnded) return false;
-            if (towerTokens == 0) { BuildDenied?.Invoke(); return false; }
-            TowerTokens--;
+            if (HasEnded || amount < 1) return false;
+            if (towerTokens < amount) { BuildDenied?.Invoke(); return false; }
+            TowerTokens -= amount;
             return true;
         }
 
-        public void RememberTower(Vector2Int cell)
+        // Records a tower and its upgrade level (0 = first level) so it is rebuilt on later days.
+        public void RememberTower(Vector2Int cell, int level = 0)
         {
-            if (!HasEnded && !towerCells.Contains(cell)) towerCells.Add(cell);
+            if (HasEnded) return;
+            if (!towerCells.Contains(cell)) towerCells.Add(cell);
+            towerLevels[cell] = Mathf.Max(0, level);
         }
+
+        public int TowerLevelAt(Vector2Int cell) => towerLevels.TryGetValue(cell, out int level) ? level : 0;
 
         public bool HasCollectedCavePickup(string pickupId) => collectedCavePickups.Contains(Day + ":" + pickupId);
 
@@ -189,11 +205,13 @@ namespace Shared.HUD
             Outcome = RunOutcome.Playing;
             ResultMessage = null;
             Day = 1;
+            RunSeed = UnityEngine.Random.Range(1, int.MaxValue);
             Phase = PlayPhase.None;
             PhaseComplete = false;
             elapsedSeconds = 0;
             overtimePenalties = 0;
             towerCells.Clear();
+            towerLevels.Clear();
             collectedCavePickups.Clear();
             health = Mathf.Max(0, startingHealth);
             towerTokens = Mathf.Max(0, startingTowerTokens);

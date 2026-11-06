@@ -31,6 +31,7 @@ namespace TD.Editor
                 settings.packagedTerrain = AssetDatabase.LoadAssetAtPath<TextAsset>(Folder + "/Data/arab_32x18.txt");
                 EditorUtility.SetDirty(settings);
             }
+            AssignTerrainArt(settings);
             var shapes = LoadOrCreate<SharedShapes>(ShapesPath);
             AssignGameplaySprites(shapes);
             shapes.circle = CreateSprite("Circle", 256, 256, (x, y) => x * x + y * y <= 0.25f);
@@ -96,6 +97,21 @@ namespace TD.Editor
             camera.cullingMask = 1 << 30;
             bootstrap.gameObject.layer = 30;
             bootstrap.prototypeCamera = camera;
+            // Parent the controls hint to the camera so it stays on screen while the camera follows the player.
+            var font = Resources.Load<TMPro.TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
+            if (!font) throw new InvalidOperationException("The bundled TMP font is missing.");
+            var controlsTransform = camera.transform.Find("Controls");
+            var controls = controlsTransform ? controlsTransform.GetComponent<TMPro.TextMeshPro>()
+                : new GameObject("Controls", typeof(TMPro.TextMeshPro)).GetComponent<TMPro.TextMeshPro>();
+            controls.transform.SetParent(camera.transform, false);
+            controls.transform.localPosition = new Vector3(0, -settings.cameraZoom + .35f, 10);
+            controls.gameObject.layer = 30;
+            controls.text = "B   BUILD / UPGRADE TOWER        C   COLLECT DROPS";
+            controls.font = font; controls.fontSize = 2; controls.color = new Color(.64f, .79f, .87f);
+            controls.alignment = TMPro.TextAlignmentOptions.Center;
+            controls.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
+            controls.rectTransform.sizeDelta = new Vector2(6, .5f);
+            controls.GetComponent<MeshRenderer>().sortingOrder = 100;
             if (bootstrap.stage >= 5 && !camera.GetComponent<TDCameraFollow>()) camera.gameObject.AddComponent<TDCameraFollow>();
             if (bootstrap.stage >= 2)
             {
@@ -128,7 +144,63 @@ namespace TD.Editor
             shapes.buildReward = SpriteAt("Assets/Shared/HUD/Art/build.png");
             shapes.claw = SpriteAt("Assets/Shared/Claw/Art/claw.png");
             shapes.destroyedFrames = FramesAt("Assets/Shared/Graphics/Art/destroyed_sprite_sheet.png");
+            // Sheet slices run 8 per row: row 2 is 8-15 (idle 8-11, walk 12-15), row 3 starts at 16 (back view).
+            Sprite[] character = FramesAt("Assets/Shared/Graphics/Art/character_sprite_sheet.png");
+            shapes.playerIdleFrames = character.Skip(8).Take(4).ToArray();
+            shapes.playerWalkFrames = character.Skip(12).Take(4).ToArray();
+            shapes.playerUpFrames = character.Skip(16).Take(1).ToArray();
+            // Enemy walk loop: row 1 of enemy1_sprite_sheet is slices 0 and 2-8 (slice 1 is a stray speck).
+            var enemySheet = AssetDatabase.LoadAllAssetsAtPath("Assets/Shared/Graphics/Art/enemy1_sprite_sheet.png").OfType<Sprite>()
+                .ToDictionary(sprite => sprite.name);
+            shapes.enemyFrames = new[] { 0, 2, 3, 4, 5, 6, 7, 8 }.Select(i => enemySheet.TryGetValue("enemy1_sprite_sheet_" + i, out var sprite) ? sprite
+                : throw new InvalidOperationException("Missing enemy1_sprite_sheet_" + i)).ToArray();
             EditorUtility.SetDirty(shapes);
+        }
+
+        // Fence and road art arrives normalised to a regular flat-top hex (width : height = 1 : 0.866),
+        // so each imports as one centred sprite exactly one unit wide. Empty settings slots are filled.
+        private static void AssignTerrainArt(TDSettings settings)
+        {
+            const string art = "Assets/Shared/Graphics/Art/";
+            Sprite[] fences = { HexTileSprite(art + "fence_1.png"), HexTileSprite(art + "fence_2.png"), HexTileSprite(art + "fence_3.png") };
+            Sprite straight = HexTileSprite(art + "tiles_road_diagonal.png");
+            Sprite turn = HexTileSprite(art + "tiles_road_turn.png");
+            Sprite junction = HexTileSprite(art + "tiles_road_intersection.png");
+            if (settings.fenceSprites == null || settings.fenceSprites.All(s => !s)) settings.fenceSprites = fences;
+            if (!settings.roadStraight) settings.roadStraight = straight;
+            if (!settings.roadTurn) settings.roadTurn = turn;
+            if (!settings.roadJunction) settings.roadJunction = junction;
+            // Turret art keeps its own import pivot (the body centre), so it is only looked up here.
+            string[] turrets = { "turret_level1", "turret_level2" };
+            if (settings.towerLevels != null)
+                for (int i = 0; i < settings.towerLevels.Length && i < turrets.Length; i++)
+                    if (settings.towerLevels[i] != null && !settings.towerLevels[i].sprite)
+                        settings.towerLevels[i].sprite = SpriteAt(art + turrets[i] + ".png");
+            EditorUtility.SetDirty(settings);
+        }
+
+        private static Sprite HexTileSprite(string path)
+        {
+            var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+            if (!importer) throw new InvalidOperationException("Missing terrain art: " + path);
+            var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            var importSettings = new TextureImporterSettings();
+            importer.ReadTextureSettings(importSettings);
+            importSettings.textureType = TextureImporterType.Sprite;
+            importSettings.spriteMode = (int)SpriteImportMode.Single;
+            importSettings.spriteAlignment = (int)SpriteAlignment.Center;
+            importSettings.spriteMeshType = SpriteMeshType.FullRect;
+            importSettings.spritePixelsPerUnit = texture ? texture.width : 100;
+            importSettings.mipmapEnabled = false;
+            importSettings.alphaIsTransparency = true;
+            importSettings.wrapMode = TextureWrapMode.Clamp;
+            importSettings.filterMode = FilterMode.Bilinear;
+            importer.SetTextureSettings(importSettings);
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.SaveAndReimport();
+            var sprite = AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>().FirstOrDefault();
+            if (!sprite) throw new InvalidOperationException("Terrain art did not import as a sprite: " + path);
+            return sprite;
         }
 
         // Loads every slice of a sprite sheet in play order, by the numeric suffix Unity gives each slice.

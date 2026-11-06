@@ -171,10 +171,10 @@ TextureImporter:
       name: enemy1_sprite_sheet_0
       rect:
         serializedVersion: 2
-        x: 10
-        y: 467
-        width: 197
-        height: 258
+        x: 0
+        y: 457
+        width: 240
+        height: 268
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -215,10 +215,10 @@ TextureImporter:
       name: enemy1_sprite_sheet_2
       rect:
         serializedVersion: 2
-        x: 258
-        y: 467
-        width: 201
-        height: 254
+        x: 238
+        y: 457
+        width: 240
+        height: 268
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -237,10 +237,10 @@ TextureImporter:
       name: enemy1_sprite_sheet_3
       rect:
         serializedVersion: 2
-        x: 503
-        y: 467
-        width: 202
-        height: 249
+        x: 484
+        y: 457
+        width: 240
+        height: 268
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -259,10 +259,10 @@ TextureImporter:
       name: enemy1_sprite_sheet_4
       rect:
         serializedVersion: 2
-        x: 749
+        x: 730
         y: 457
-        width: 203
-        height: 254
+        width: 240
+        height: 268
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -281,10 +281,10 @@ TextureImporter:
       name: enemy1_sprite_sheet_5
       rect:
         serializedVersion: 2
-        x: 995
-        y: 467
-        width: 236
-        height: 204
+        x: 993
+        y: 457
+        width: 240
+        height: 268
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -303,10 +303,10 @@ TextureImporter:
       name: enemy1_sprite_sheet_6
       rect:
         serializedVersion: 2
-        x: 1275
-        y: 467
-        width: 223
-        height: 197
+        x: 1266
+        y: 457
+        width: 240
+        height: 268
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -325,10 +325,10 @@ TextureImporter:
       name: enemy1_sprite_sheet_7
       rect:
         serializedVersion: 2
-        x: 1542
-        y: 467
-        width: 223
-        height: 205
+        x: 1534
+        y: 457
+        width: 240
+        height: 268
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -347,10 +347,10 @@ TextureImporter:
       name: enemy1_sprite_sheet_8
       rect:
         serializedVersion: 2
-        x: 1809
-        y: 467
-        width: 225
-        height: 198
+        x: 1794
+        y: 457
+        width: 240
+        height: 268
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}

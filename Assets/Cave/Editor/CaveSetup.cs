@@ -17,6 +17,18 @@ namespace Cave.Editor
     {
         private const string SolidPath = "Assets/Cave/Art/CaveSolid.png";
         private const string PhysicsPath = "Assets/Cave/Art/CavePlayer.physicsMaterial2D";
+        private const string SheetPath = "Assets/Shared/Graphics/Art/character_sprite_sheet.png";
+        public const string SettingsPath = "Assets/Cave/Data/CaveSettings.asset";
+
+        private static CaveSettings LoadOrCreateSettings()
+        {
+            var settings = AssetDatabase.LoadAssetAtPath<CaveSettings>(SettingsPath);
+            if (settings) return settings;
+            if (!AssetDatabase.IsValidFolder("Assets/Cave/Data")) AssetDatabase.CreateFolder("Assets/Cave", "Data");
+            settings = ScriptableObject.CreateInstance<CaveSettings>();
+            AssetDatabase.CreateAsset(settings, SettingsPath);
+            return settings;
+        }
 
         [MenuItem("Tools/Cave/Setup Cave Scene")]
         public static void Setup()
@@ -54,82 +66,31 @@ namespace Cave.Editor
                 cave = root.GetComponent<CaveExploration>();
             }
             var environment = Child(cave.transform, "Cave Environment");
-            // Replace the old flat corridor without touching unrelated scene roots.
-            foreach (string name in new [] { "Floor", "Ceiling", "Exit Opening", "Exit Arrow" }) RemoveChild(environment, name);
+            // Shaft, platforms and pickups are now generated at runtime per day by CaveBuilder.
+            foreach (string name in new [] { "Floor", "Ceiling", "Exit Opening", "Exit Arrow", "Shaft", "Platforms", "Generated" })
+                RemoveChild(environment, name);
             for (int i = 0; i < 8; i++) RemoveChild(environment, "Ceiling Rock " + i);
-            var shaft = Child(environment, "Shaft");
-            float shaftHeight = -CaveExploration.BottomY + 12;
-            float middleY = CaveExploration.BottomY / 2;
-            Rect(shaft, "Background", solid, shapes, new Vector2(0, middleY), new Vector2(20, shaftHeight), new Color(.045f, .09f, .15f), -30);
-            for (int side = -1; side <= 1; side += 2)
-            {
-                var wall = Rect(shaft, side < 0 ? "Left Wall" : "Right Wall", solid, shapes,
-                    new Vector2(side * 6.2f, middleY), new Vector2(2, shaftHeight), new Color(.025f, .045f, .07f), -5);
-                var wallCollider = GetOrAdd<BoxCollider2D>(wall.gameObject);
-                wallCollider.size = Vector2.one;
-                wallCollider.sharedMaterial = frictionless;
-                for (int i = 0; i < 15; i++)
-                {
-                    var rock = Sprite(shaft, (side < 0 ? "Left" : "Right") + " Rock " + i, shapes.triangle, shapes,
-                        i % 2 == 0 ? new Color(.06f, .12f, .18f) : new Color(.045f, .085f, .13f), -4);
-                    rock.transform.localPosition = new Vector3(side * 5.6f, 2 - i * 7, 0);
-                    rock.transform.localScale = new Vector3(1.6f, 5.5f, 1);
-                    rock.transform.localRotation = Quaternion.Euler(0, 0, side < 0 ? -90 : 90);
-                }
-            }
-            var cap = Rect(shaft, "Shaft Cap", solid, shapes, new Vector2(0, 4.8f), new Vector2(15, 1.5f), new Color(.025f, .045f, .07f), -5);
-            var capCollider = GetOrAdd<BoxCollider2D>(cap.gameObject);
-            capCollider.size = Vector2.one;
-            capCollider.sharedMaterial = frictionless;
-            var platformsRoot = Child(environment, "Platforms");
-            cave.platforms = new CavePlatform[CaveExploration.StepCount];
-            for (int i = 0; i < CaveExploration.StepCount; i++)
-            {
-                bool rest = i == 0 || i == CaveExploration.StepCount - 1 || i % 10 == 0;
-                float x = rest ? 0 : i % 4 == 1 ? 2.7f : i % 4 == 3 ? -2.7f : 0;
-                float width = rest ? 4.4f : 3.1f + (i % 3) * .15f;
-                var step = Child(platformsRoot, "Step " + (i + 1).ToString("00"));
-                step.localPosition = new Vector3(x, -i * CaveExploration.StepSpacing, 0);
-                step.localScale = Vector3.one;
-                var platform = GetOrAdd<CavePlatform>(step.gameObject);
-                platform.Configure(i, width);
-                cave.platforms[i] = platform;
-                var art = platformArt[i % 2];
-                var rock = Sprite(step, "Rock", art, shapes, Color.white, 5);
-                float scale = width / art.bounds.size.x;
-                rock.transform.localScale = Vector3.one * scale;
-                rock.transform.localPosition = new Vector3(0, -art.bounds.size.y * scale / 2, 0);
-                var surface = GetOrAdd<BoxCollider2D>(step.gameObject);
-                surface.size = new Vector2(width * .9f, .18f);
-                surface.offset = new Vector2(0, -.09f);
-                surface.usedByEffector = true;
-                var effector = GetOrAdd<PlatformEffector2D>(step.gameObject);
-                effector.useOneWay = true;
-                effector.useOneWayGrouping = true;
-                effector.surfaceArc = 170;
-                Text(step, "Step Label", (i + 1).ToString("00"), font, 2.4f,
-                    new Vector2(-width / 2 + .45f, -.35f), new Vector2(1, .45f), new Color(1, .88f, .65f));
-                if (i > 0 && i < CaveExploration.StepCount - 1 && i % 3 == 0)
-                {
-                    bool build = i % 9 == 0;
-                    var pickup = Child(step, "Pickup");
-                    pickup.localPosition = new Vector3(0, .48f, 0);
-                    var icon = Sprite(pickup, "Icon", build ? buildArt : healthArt, shapes, Color.white, 15);
-                    icon.transform.localPosition = Vector3.zero;
-                    icon.transform.localScale = Vector3.one * SharedShapes.ActorScale(icon.sprite, .48f);
-                    var trigger = GetOrAdd<CircleCollider2D>(pickup.gameObject);
-                    trigger.isTrigger = true;
-                    trigger.radius = .34f;
-                    GetOrAdd<CavePickup>(pickup.gameObject).Configure("step-" + i,
-                        build ? GameSession.PickupType.Build : GameSession.PickupType.Health, 1, icon.transform);
-                    Text(pickup, "Reward Label", build ? "+1 BUILD" : "+1 HP", font, 2.2f,
-                        new Vector2(0, .48f), new Vector2(2, .4f), build ? new Color(.55f, 1, .82f) : new Color(1, .64f, .6f));
-                }
-            }
-            Text(environment, "Controls", "A/D   MOVE\nSPACE   MULTI-JUMP\nS + SPACE   DROP", font, 1.8f,
-                new Vector2(-3.7f, 1.1f), new Vector2(3, 1.1f), new Color(.64f, .79f, .87f));
+            var builder = GetOrAdd<CaveBuilder>(environment.gameObject);
+            builder.solid = solid;
+            builder.rockTriangle = shapes.triangle;
+            builder.platformArt = platformArt;
+            builder.groundArt = LoadSprite("Assets/Shared/Graphics/Art/cave_ground.png");
+            builder.faithfulArt = LoadSprite("Assets/Shared/Graphics/Art/faithful_one.png");
+            builder.healthIcon = healthArt;
+            builder.buildIcon = buildArt;
+            builder.unlitMaterial = shapes.unlitMaterial;
+            builder.font = font;
+            builder.wallMaterial = frictionless;
+            EditorUtility.SetDirty(builder);
+            cave.builder = builder;
+            cave.settings = LoadOrCreateSettings();
+            Text(environment, "Controls", "A/D   MOVE\nSPACE   JUMP / BOOST UP\nS + SPACE   DROP / BOOST DOWN\n"
+                + $"<color=#FFC266>CLIMB BACK TO THIS TD DOOR\nWITHIN {GameSession.CaveSeconds}s OR LOSE HP</color>", font, 1.8f,
+                new Vector2(3.4f, 2.8f), new Vector2(3.6f, 2), new Color(.64f, .79f, .87f));
+            cave.controlsLabel = environment.Find("Controls");
             var gate = Child(environment, "TD Exit");
-            gate.localPosition = new Vector3(1.3f, cave.platforms[0].SurfaceY, 0);
+            // Placeholder; CaveExploration moves the door above platform 01 once the day's cave is generated.
+            gate.localPosition = new Vector3(0, cave.settings.exitHeightAbovePlatform01, 0);
             Rect(gate, "Frame", solid, shapes, new Vector2(0, .85f), new Vector2(1.1f, 1.7f), new Color(.12f, .72f, .78f), 8);
             Rect(gate, "Opening", solid, shapes, new Vector2(0, .8f), new Vector2(.78f, 1.5f), new Color(.035f, .12f, .2f), 9);
             Text(gate, "Exit Label", "TD", font, 4.2f, new Vector2(0, 1.05f), new Vector2(1, .7f), Color.white);
@@ -141,11 +102,24 @@ namespace Cave.Editor
             GetOrAdd<CaveExit>(gate.gameObject).Configure(cave);
             cave.exitGate = gate;
 
-            var player = Sprite(cave.transform, "Cave Player", shapes.player, shapes, Color.white, 30);
-            player.transform.localPosition = cave.platforms[0].SafePosition;
-            float playerScale = SharedShapes.ActorScale(shapes.player, CaveExploration.PlayerHeight);
-            player.transform.localScale = Vector3.one * playerScale;
-            RemoveChild(player.transform, "Black Outline");
+            var player = Child(cave.transform, "Cave Player");
+            player.localPosition = new Vector3(0, cave.settings.exitHeightAbovePlatform01 + .8f, 0); // runtime: TD door centre
+            player.localScale = Vector3.one;
+            var oldRenderer = player.GetComponent<SpriteRenderer>();
+            if (oldRenderer) UnityEngine.Object.DestroyImmediate(oldRenderer);
+            RemoveChild(player, "Black Outline");
+            // Row 1 of the sheet: frames 0-3 idle, 4-7 run (all facing right).
+            var sheet = AssetDatabase.LoadAllAssetsAtPath(SheetPath).OfType<Sprite>().ToDictionary(sp => sp.name);
+            Sprite Frame(int i) => sheet.TryGetValue("character_sprite_sheet_" + i, out var sp) ? sp
+                : throw new InvalidOperationException($"Missing character_sprite_sheet_{i} in {SheetPath}.");
+            var idle = new [] { Frame(0), Frame(1), Frame(2), Frame(3) };
+            var run = new [] { Frame(4), Frame(5), Frame(6), Frame(7) };
+            var visual = Sprite(player, "Visual", idle[0], shapes, Color.white, 30);
+            float visualScale = CaveExploration.PlayerHeight / idle[0].bounds.size.y; // same sizing CaveWalker uses in play
+            visual.transform.localScale = Vector3.one * visualScale;
+            visual.transform.localPosition = new Vector3(0, -CaveExploration.PlayerHalfHeight - idle[0].bounds.min.y * visualScale, 0);
+            var fire = Sprite(player, "Jet Fire", LoadSprite("Assets/Shared/Graphics/Art/fire.png"), shapes, Color.white, 29);
+            fire.enabled = false;
             var body = GetOrAdd<Rigidbody2D>(player.gameObject);
             body.bodyType = RigidbodyType2D.Dynamic;
             body.gravityScale = .28f;
@@ -154,10 +128,15 @@ namespace Cave.Editor
             body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
             body.interpolation = RigidbodyInterpolation2D.Interpolate;
             var playerCollider = GetOrAdd<BoxCollider2D>(player.gameObject);
-            playerCollider.size = new Vector2(.43f, CaveExploration.PlayerHalfHeight * 2) / playerScale;
+            playerCollider.size = new Vector2(.43f, CaveExploration.PlayerHalfHeight * 2);
             playerCollider.offset = Vector2.zero;
             playerCollider.sharedMaterial = frictionless;
             cave.player = GetOrAdd<CaveWalker>(player.gameObject);
+            cave.player.visual = visual;
+            cave.player.idleFrames = idle;
+            cave.player.moveFrames = run;
+            cave.player.jetFire = fire;
+            EditorUtility.SetDirty(cave.player);
             cave.walkSpeed = 5.2f;
             cave.jumpSpeed = 8.5f;
             var cameraObject = Child(cave.transform, "Cave Camera");
@@ -169,6 +148,7 @@ namespace Cave.Editor
             camera.cullingMask = 1 << 30;
             camera.transform.localPosition = new Vector3(0, -1.6f, -10);
             cave.caveCamera = camera;
+            cave.openingArt = LoadSprite("Assets/Shared/Graphics/Art/opening.png");
             cave.existingInputActions = AssetDatabase.LoadAssetAtPath<UnityEngine.InputSystem.InputActionAsset>("Assets/InputSystem_Actions.inputactions");
             EditorUtility.SetDirty(cave);
             EditorSceneManager.MarkSceneDirty(scene);
@@ -182,8 +162,9 @@ namespace Cave.Editor
             foreach (var entry in EditorBuildSettings.scenes)
                 if (entry.path != CaveExploration.ScenePath && entry.path != CaveExploration.TDScenePath) scenes.Add(entry);
             EditorBuildSettings.scenes = scenes.ToArray();
-            Selection.activeGameObject = cave.gameObject;
-            Debug.Log("Low-gravity Cave ready: 40 one-way platforms, an exit on the starting platform, 8 health pickups (+1) and 4 build pickups (+1) per day. A/D move, Space multi-jump, Down + Space drop.");
+            Selection.activeObject = cave.settings;
+            Debug.Log("Cave ready: layouts are generated per day at runtime from " + SettingsPath
+                + " (layers, health and build pickups per day). The player drops out of the TD door above platform 01, dives down the clear left lane and climbs back.");
         }
 
         private static T GetOrAdd<T>(GameObject go) where T : Component

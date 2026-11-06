@@ -32,9 +32,9 @@ namespace TD
         {
             Settings=settings; Shapes=shapes; ActorsRoot=actorsRoot; map=hexMap;
             baseCells=map.BaseCells();
-            spawnCells=map.EdgeCells().FindAll(cell => map.TerrainAt(cell) != TDMap.Base);
+            spawnCells=map.EdgeCells().FindAll(cell => map.TerrainAt(cell) != TDMap.Base && map.TerrainAt(cell) != TDMap.Fence);
             if (baseCells.Count == 0) throw new System.InvalidOperationException("TD: the map has no B (Base) tiles; gameplay startup is disabled.");
-            if (spawnCells.Count == 0) throw new System.InvalidOperationException("TD: every map-edge tile is Base, so enemies have nowhere to spawn.");
+            if (spawnCells.Count == 0) throw new System.InvalidOperationException("TD: every map-edge tile is Base or Fence, so enemies have nowhere to spawn.");
         }
 
         // True when the world position lies on a Base cell.
@@ -51,7 +51,9 @@ namespace TD
         // Instantiates and tracks a new enemy actor walking straight from start toward target.
         public TDEnemy SpawnEnemy(Vector3 start, Vector3 target)
         {
-            var renderer = Shapes.CreateActor("Enemy", Shapes.enemy, start, .4f, 20, ActorsRoot);
+            // Scale once from the first walk frame so every frame of the loop shares one size.
+            Sprite look = Shapes.enemyFrames != null && Shapes.enemyFrames.Length > 0 && Shapes.enemyFrames[0] ? Shapes.enemyFrames[0] : Shapes.enemy;
+            var renderer = Shapes.CreateActor("Enemy", look, start, .4f, 20, ActorsRoot);
             var enemy = renderer.gameObject.AddComponent<TDEnemy>();
             enemy.Initialize(this, start, target);
             enemies.Add(enemy);
@@ -74,8 +76,8 @@ namespace TD
                 KilledCount++;
                 if (!CanSimulate) return;
                 TDEnemyExplosion.Spawn(this, enemy.transform.position);
-                if (Settings.buildRewardDropChance >= 1
-                    || (Settings.buildRewardDropChance > 0 && Random.value < Settings.buildRewardDropChance))
+                float dropChance = Settings.BuildRewardDropChanceOnDay(GameSession.Instance ? GameSession.Instance.Day : 1);
+                if (dropChance >= 1 || (dropChance > 0 && Random.value < dropChance))
                     SpawnBuildReward(enemy.transform.position);
             }
         }
