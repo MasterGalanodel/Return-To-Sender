@@ -20,6 +20,7 @@ namespace TD
         [SerializeField] private Tilemap terrain;
         [SerializeField] private Tilemap desert;
         [SerializeField] private Tilemap decor;
+        [SerializeField] private SpriteRenderer baseShip;
         private readonly List<Tile> desertTiles = new List<Tile>();
         private readonly List<Tile> decorTiles = new List<Tile>();
         // Edges a road sprite joins in its unrotated art, numbered clockwise from the top edge:
@@ -164,6 +165,7 @@ namespace TD
             WorldBounds = bounds;
             int variants = PaintDesert(settings, shapes);
             int decorCount = PaintDecor(settings, shapes, out int roads, out int fences);
+            PlaceBaseShip(settings, shapes);
             Debug.Log($"TD: map loaded from {source}; {Columns} x {Rows}, {Columns * Rows} hex cells, {variants} desert variant tiles, "
                 + $"{roads} road tiles, {fences} fence tiles ({decorCount} decor).", this);
         }
@@ -216,6 +218,42 @@ namespace TD
                 }
             decor.CompressBounds();
             return roads + fences;
+        }
+
+        // Puts the landed ship over the middle of the Base: above the ground art, below towers and actors.
+        private void PlaceBaseShip(TDSettings settings, SharedShapes shapes)
+        {
+            Sprite sprite = settings ? settings.baseShip : null;
+            List<Vector2Int> cells = BaseCells();
+            if (!sprite || cells.Count == 0)
+            {
+                if (baseShip) DestroyObject(baseShip.gameObject);
+                baseShip = null;
+                return;
+            }
+            Vector3 middle = Vector3.zero;
+            foreach (var cell in cells) middle += Center(cell);
+            middle /= cells.Count;
+            if (!baseShip)
+            {
+                var go = new GameObject("Base Ship", typeof(SpriteRenderer));
+                go.layer = 30;
+                go.transform.SetParent(transform, false);
+                baseShip = go.GetComponent<SpriteRenderer>();
+            }
+            baseShip.sprite = sprite;
+            baseShip.sharedMaterial = shapes.unlitMaterial;
+            baseShip.sortingOrder = 5;
+            float scale = settings.baseShipWidth / sprite.bounds.size.x;
+            baseShip.transform.localScale = new Vector3(scale, scale, 1);
+            // Centre the art itself, whatever pivot the sprite was sliced with.
+            Vector3 offset = sprite.bounds.center * scale;
+            baseShip.transform.position = new Vector3(middle.x - offset.x, middle.y - offset.y, middle.z);
+        }
+
+        private static void DestroyObject(GameObject go)
+        {
+            if (Application.isPlaying) Destroy(go); else DestroyImmediate(go);
         }
 
         // Chooses the road shape and clockwise 60° turns that best match this cell's links: road

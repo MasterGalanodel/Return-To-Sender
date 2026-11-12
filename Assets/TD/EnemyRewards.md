@@ -15,9 +15,8 @@ Rewards stay until collected or the current TD phase ends. A phase transition ca
 unfinished claw retrieval without crediting it. Collected tokens persist through the existing
 shared session and can be spent on towers with **B**.
 
-Balance values live in `Assets/TD/Data/PrototypeSettings.asset`: `buildRewardDropChance` (day 1),
-`buildRewardDropChanceDailyMultiplier` (each later day multiplies the chance again, so 0.2 → 0.12 → 0.072 …),
-`buildRewardDropRadius`, and `buildRewardCollectRadius`. Sprite references live in
+Balance values live in `Assets/TD/Data/PrototypeSettings.asset`: `buildRewardDropChancePerDay`
+(one chance per day, element 0 = day 1; days past the end reuse the last entry), `buildRewardDropRadius`, and `buildRewardCollectRadius`. Sprite references live in
 `Assets/Shared/Graphics/Data/PrototypeShapes.asset`. **Tools > Shared > Graphics > Assign
 Gameplay Sprites** rewires the supplied artwork when needed.
 

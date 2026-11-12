@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.Tilemaps;
 
 namespace TD
@@ -41,14 +42,14 @@ namespace TD
         [Header("Difficulty")]
         [Tooltip("Length of each TD phase in seconds.")]
         [Min(1)] public int towerDefenseSeconds = 60;
-        [Tooltip("Seconds between enemy spawns, per day (element 0 = day 1). Days past the end use the last value. "
+        [Tooltip("Spawn interval factor per day (element 0 = day 1). Days past the end use the last value. "
+            + "Seconds between spawns = factor × current turret levels (a level-1 turret counts 1, level-2 counts 2; at least 1). "
             + "Intervals shorter than a frame spawn several enemies in the same frame.")]
-        public float[] spawnIntervalPerDay = { 3, 1.5f, .75f, .375f, .1875f, .09375f };
+        [FormerlySerializedAs("spawnIntervalPerDay")]
+        public float[] spawnIntervalFactor = { 3, 1.5f, .75f, .375f, .1875f, .09375f };
         [Header("Enemy rewards")]
-        [Tooltip("Chance a killed enemy drops a build token on day 1.")]
-        [Range(0, 1)] public float buildRewardDropChance = .2f;
-        [Tooltip("Each new day multiplies the drop chance by this (0.6 = day 2 is 60% of day 1, day 3 is 60% of day 2, ...).")]
-        [Range(0, 1)] public float buildRewardDropChanceDailyMultiplier = .6f;
+        [Tooltip("Chance a killed enemy drops a build token, per day (element 0 = day 1). Days past the end use the last value.")]
+        public float[] buildRewardDropChancePerDay = { .2f, .12f, .07f, .2f, .2f, .2f };
         [Min(0)] public float buildRewardDropRadius = 2;
         [Min(0.01f)] public float buildRewardCollectRadius = .6f;
         [Header("Camera")][Min(0.01f)] public float cameraZoom = 3.9f;
@@ -67,6 +68,11 @@ namespace TD
         public Sprite[] fenceSprites;
         [Tooltip("Change to reshuffle which fence variant each boundary cell gets.")]
         public int fenceSeed = 1;
+        [Header("Base ship")]
+        [Tooltip("Drawn once, centred on the middle of all B (Base) cells. Leave empty for no ship.")]
+        public Sprite baseShip;
+        [Tooltip("World width of the ship. A hex is 1 wide and columns sit 0.75 apart, so 2.5 spans about 3 tiles and 2 a little over 2.")]
+        [Min(0.01f)] public float baseShipWidth = 2f;
         [Header("Road")]
         [Tooltip("Flat-top hex road art, rotated per R cell to follow its neighbours. Leave empty for plain colour.\n"
             + "Straight: road from the upper-left edge to the lower-right edge.\n"
@@ -85,25 +91,29 @@ namespace TD
             foreach (float value in values)
                 if (float.IsNaN(value) || float.IsInfinity(value) || value <= 0)
                     throw new ArgumentException("TD: all speed, range, rate, damage, health, interval and zoom settings must be finite and positive.");
-            if (float.IsNaN(buildRewardDropChance) || buildRewardDropChance < 0 || buildRewardDropChance > 1
-                || float.IsNaN(buildRewardDropChanceDailyMultiplier) || buildRewardDropChanceDailyMultiplier < 0 || buildRewardDropChanceDailyMultiplier > 1
+            if (buildRewardDropChancePerDay == null || buildRewardDropChancePerDay.Length == 0
+                || Array.Exists(buildRewardDropChancePerDay, chance => float.IsNaN(chance) || chance < 0 || chance > 1)
                 || float.IsNaN(buildRewardDropRadius) || float.IsInfinity(buildRewardDropRadius) || buildRewardDropRadius < 0)
-                throw new ArgumentException("TD: reward chance and its daily multiplier must be between 0 and 1, and drop radius must be finite and nonnegative.");
+                throw new ArgumentException("TD: buildRewardDropChancePerDay needs at least one entry, each between 0 and 1, and drop radius must be finite and nonnegative.");
             if (towerDefenseSeconds < 1)
                 throw new ArgumentException("TD: towerDefenseSeconds must be at least 1.");
-            if (spawnIntervalPerDay == null || spawnIntervalPerDay.Length == 0
-                || Array.Exists(spawnIntervalPerDay, interval => float.IsNaN(interval) || float.IsInfinity(interval) || interval <= 0))
-                throw new ArgumentException("TD: spawnIntervalPerDay needs at least one entry, and every entry must be finite and positive.");
+            if (spawnIntervalFactor == null || spawnIntervalFactor.Length == 0
+                || Array.Exists(spawnIntervalFactor, factor => float.IsNaN(factor) || float.IsInfinity(factor) || factor <= 0))
+                throw new ArgumentException("TD: spawnIntervalFactor needs at least one entry, and every entry must be finite and positive.");
             if (towerLevels == null || towerLevels.Length == 0
                 || Array.Exists(towerLevels, level => level == null || !level.sprite || level.cost < 1 || level.muzzles == null || level.muzzles.Length == 0))
                 throw new ArgumentException("TD: towerLevels needs at least one level, each with a sprite, a cost of at least 1 and one or more muzzles.");
         }
 
-        // Build-token drop chance on the given day (1-based): day 1 uses buildRewardDropChance, each later day scales it again.
+        // Build-token drop chance on the given day (1-based); days past the list reuse its last entry.
         public float BuildRewardDropChanceOnDay(int day) =>
-            buildRewardDropChance * Mathf.Pow(buildRewardDropChanceDailyMultiplier, Mathf.Max(0, day - 1));
+            buildRewardDropChancePerDay[Mathf.Clamp(day - 1, 0, buildRewardDropChancePerDay.Length - 1)];
 
-        // Seconds between spawns on the given day (1-based); days past the list reuse its last entry.
-        public float SpawnIntervalOnDay(int day) => spawnIntervalPerDay[Mathf.Clamp(day - 1, 0, spawnIntervalPerDay.Length - 1)];
+        // Spawn interval factor on the given day (1-based); days past the list reuse its last entry.
+        public float SpawnIntervalFactorOnDay(int day) => spawnIntervalFactor[Mathf.Clamp(day - 1, 0, spawnIntervalFactor.Length - 1)];
+
+        // Seconds between spawns on the given day: that day's factor × the summed turret levels (at least 1,
+        // so an empty base still uses the bare factor instead of a zero interval).
+        public float SpawnIntervalOnDay(int day, int turretLevels) => SpawnIntervalFactorOnDay(day) * Mathf.Max(1, turretLevels);
     }
 }

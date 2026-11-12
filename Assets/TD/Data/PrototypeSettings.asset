@@ -34,15 +34,20 @@ MonoBehaviour:
   enemySpeed: 1
   enemyHealth: 5
   towerDefenseSeconds: 40
-  spawnIntervalPerDay:
-  - 3
-  - 1.5
-  - 0.75
-  - 0.375
-  - 0.1875
-  - 0.09375
-  buildRewardDropChance: 0.2
-  buildRewardDropChanceDailyMultiplier: 0.6
+  spawnIntervalFactor:
+  - 1
+  - 0.5
+  - 0.25
+  - 0.1
+  - 0.05
+  - 0.02
+  buildRewardDropChancePerDay:
+  - 0.2
+  - 0.12
+  - 0.07
+  - 0.2
+  - 0.1
+  - 0.1
   buildRewardDropRadius: 2
   buildRewardCollectRadius: 0.6
   cameraZoom: 3.9
@@ -60,6 +65,8 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 14a7f0e6469633b448debd48f9516201, type: 3}
   - {fileID: 21300000, guid: edfa859870109e74a831f0d5fa99b9cf, type: 3}
   fenceSeed: 1
+  baseShip: {fileID: 334198196256985635, guid: 8ec158b2012616d43abd009988bfc4b6, type: 3}
+  baseShipWidth: 2
   roadStraight: {fileID: 21300000, guid: 2903e7c428517f445b0754707f1098f4, type: 3}
   roadTurn: {fileID: 21300000, guid: 3507bb6e725f348479b5625e67055e0e, type: 3}
   roadJunction: {fileID: 21300000, guid: 6265936ff3f1fa74ca5cf330754114d9, type: 3}

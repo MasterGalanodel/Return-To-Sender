@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace TD
 {
-    // Spawns enemies at a regular time interval that shrinks each day (TDSettings.spawnIntervalPerDay).
+    // Spawns enemies at a regular time interval: the day's TDSettings.spawnIntervalFactor × current turret levels.
     public sealed class TDSpawner : MonoBehaviour
     {
         private TDWorld world;
@@ -15,8 +15,26 @@ namespace TD
         // Advances the spawn countdown timer using delta time.
         private void Update() { Step(Time.deltaTime); }
 
-        // Seconds between spawns today, from TDSettings.spawnIntervalPerDay.
-        public float SpawnInterval => world.Settings.SpawnIntervalOnDay(GameSession.Instance ? GameSession.Instance.Day : 1);
+        // Seconds between spawns today: TDSettings.spawnIntervalFactor for the day × current turret levels.
+        public float SpawnInterval
+        {
+            get
+            {
+                var session = GameSession.Instance;
+                return world.Settings.SpawnIntervalOnDay(session ? session.Day : 1, CurrentTurretLevels(session));
+            }
+        }
+
+        // Sum of every standing turret's level, 1-based (a level-1 turret counts 1, level-2 counts 2).
+        private int CurrentTurretLevels(GameSession session)
+        {
+            if (!session) return 0;
+            int maxLevel = world.Settings.towerLevels.Length - 1;
+            int total = 0;
+            foreach (var cell in session.TowerCells)
+                total += Mathf.Clamp(session.TowerLevelAt(cell), 0, maxLevel) + 1;
+            return total;
+        }
 
         // Accumulates delta time and spawns one enemy per elapsed interval. When the interval is shorter than
         // the frame, several enemies spawn in the same frame so the overall rate stays exact.

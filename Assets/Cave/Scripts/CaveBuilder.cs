@@ -26,6 +26,8 @@ namespace Cave
         public Material unlitMaterial;
         public TMP_FontAsset font;
         public PhysicsMaterial2D wallMaterial;
+        [Tooltip("Platform art brightness at the deepest layer; layer 01 stays full brightness. Depth reads by colour, no numbers.")]
+        [Range(0, 1)] public float deepestBrightness = .3f;
 
         public struct Result
         {
@@ -62,10 +64,12 @@ namespace Cave
                 bool top = layer == 0, floor = layer == layers - 1;
                 bool rest = settings.restPlatformEvery > 0 && layer % settings.restPlatformEvery == 0;
                 string label = (layer + 1).ToString("00");
+                float brightness = Mathf.Lerp(1, deepestBrightness, layer / (float)(layers - 1));
+                var tint = new Color(brightness, brightness, brightness);
                 if (floor)
                 {
                     floorY = y;
-                    platforms.Add(Floor(platformsRoot, platforms.Count, y, label));
+                    platforms.Add(Floor(platformsRoot, platforms.Count, y, label, tint));
                     platformLayer.Add(layer);
                     continue;
                 }
@@ -76,7 +80,7 @@ namespace Cave
                     x = prevX + Range(rng, -settings.maxSideStep, settings.maxSideStep);
                 }
                 x = Mathf.Clamp(x, laneEdge + width / 2, half - width / 2 - .1f);
-                platforms.Add(Ledge(platformsRoot, platforms.Count, x, y, width, label, true));
+                platforms.Add(Ledge(platformsRoot, platforms.Count, x, y, width, label, tint));
                 platformLayer.Add(layer);
                 if (!top && !rest && rng.NextDouble() < settings.secondPlatformChance)
                 {
@@ -88,7 +92,7 @@ namespace Cave
                     if (to <= from) { from = min2; to = x - gap; }
                     if (to > from)
                     {
-                        platforms.Add(Ledge(platformsRoot, platforms.Count, Range(rng, from, to), y, width2, label, false));
+                        platforms.Add(Ledge(platformsRoot, platforms.Count, Range(rng, from, to), y, width2, label + " B", tint));
                         platformLayer.Add(layer);
                     }
                 }
@@ -200,7 +204,7 @@ namespace Cave
             hint.outlineColor = new Color32(10, 8, 6, 255);
         }
 
-        private CavePlatform Floor(Transform parent, int index, float y, string label)
+        private CavePlatform Floor(Transform parent, int index, float y, string label, Color tint)
         {
             var step = Child(parent, "Layer " + label + " Floor");
             step.localPosition = new Vector3(0, y, 0);
@@ -209,7 +213,7 @@ namespace Cave
             platform.Configure(index, half * 2);
             // cave_ground.png spans wall to wall; its ridge sits on the walkable surface.
             float span = WallOuterX * 2;
-            var ground = Sprite(step, "Ground", groundArt, Color.white, 6);
+            var ground = Sprite(step, "Ground", groundArt, tint, 6);
             float scale = span / groundArt.bounds.size.x;
             ground.transform.localScale = Vector3.one * scale;
             ground.transform.localPosition = new Vector3(-groundArt.bounds.center.x * scale,
@@ -218,18 +222,17 @@ namespace Cave
             collider.size = new Vector2(span, 3.5f);
             collider.offset = new Vector2(0, -1.75f);
             collider.sharedMaterial = wallMaterial;
-            Text(step, "Step Label", label, 2.4f, new Vector2(-half + .5f, -.35f), new Vector2(1, .45f), new Color(1, .88f, .65f));
             return platform;
         }
 
-        private CavePlatform Ledge(Transform parent, int index, float x, float y, float width, string label, bool showLabel)
+        private CavePlatform Ledge(Transform parent, int index, float x, float y, float width, string label, Color tint)
         {
-            var step = Child(parent, "Layer " + label + (showLabel ? "" : " B"));
+            var step = Child(parent, "Layer " + label);
             step.localPosition = new Vector3(x, y, 0);
             var platform = step.gameObject.AddComponent<CavePlatform>();
             platform.Configure(index, width);
             var art = platformArt[index % platformArt.Length] ? platformArt[index % platformArt.Length] : platformArt[0];
-            var rock = Sprite(step, "Rock", art, Color.white, 5);
+            var rock = Sprite(step, "Rock", art, tint, 5);
             float scale = width / art.bounds.size.x;
             rock.transform.localScale = Vector3.one * scale;
             rock.transform.localPosition = new Vector3(0, -art.bounds.size.y * scale / 2, 0);
@@ -241,8 +244,6 @@ namespace Cave
             effector.useOneWay = true;
             effector.useOneWayGrouping = true;
             effector.surfaceArc = 170;
-            if (showLabel)
-                Text(step, "Step Label", label, 2.4f, new Vector2(-width / 2 + .45f, -.35f), new Vector2(1, .45f), new Color(1, .88f, .65f));
             return platform;
         }
 
