@@ -53,8 +53,8 @@ namespace Shared.HUD
             title.fontStyle = FontStyles.Bold;
             title.characterSpacing = 6;
             Label(panel, "Subtitle", victory
-                    ? "A successful visit to Little Compton Planet. Darlington Hall awaits your return, sir."
-                    : "Unresolved business on Little Compton Planet. Your stay has been extended.",
+                    ? "A successful visit to Planet Little Compton. Darlington Hall awaits your return, sir."
+                    : "Unresolved business on Planet Little Compton. Your stay has been extended.",
                 font, 20, TextColor).textWrappingMode = TextWrappingModes.Normal;
             Label(panel, "Stats", $"DAY {session.Day}/{GameSession.TotalDays}   ·   HP {session.Health}", font, 17, MutedColor);
             if (!string.IsNullOrEmpty(session.ResultMessage))

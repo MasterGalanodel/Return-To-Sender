@@ -51,15 +51,10 @@ namespace TD
             return Placement && Placement.TryPlaceCurrent();
         }
 
-        // Starts prototype initialization and adds the build smoke test runner if requested via command-line flags.
+        // Starts prototype initialization.
         private void Start()
         {
-            bool initialized=InitializePrototype();
-            if (Array.IndexOf(Environment.GetCommandLineArgs(), "--hex-td-smoke") >= 0)
-            {
-                if (initialized) gameObject.AddComponent<TDBuildSmoke>();
-                else Application.Quit(1);
-            }
+            InitializePrototype();
         }
 
         // Executes sequential startup stages to instantiate the map, player, camera follower, tower placement, and spawner.

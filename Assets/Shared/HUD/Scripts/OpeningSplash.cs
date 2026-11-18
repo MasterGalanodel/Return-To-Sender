@@ -19,7 +19,7 @@ namespace Shared.HUD
         // ␣ (U+2423) is missing from the HUD font, so the space bar is spelled out.
         public const string IntroText =
             "    Radiator’s cooking. Fuel’s running low.\n" +
-            "    Gotta top up on Planet Little Compton”.\n\n" +
+            "    Gotta top up on Planet Little Compton.\n\n" +
             "No worries.\n"+
             "<b>← → ↑ ↓</b> and <b>SPACE</b>. That’s all a good driver needs.";
 

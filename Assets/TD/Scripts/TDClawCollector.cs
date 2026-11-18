@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System.Collections.Generic;  // should be reimplemented by the claw prefab later - Miles
 using UnityEngine;
 
 namespace TD
