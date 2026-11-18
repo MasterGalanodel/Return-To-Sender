@@ -66,7 +66,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -5185649437945853404, guid: 640a2e1b6cedd664a952cef3777e81ee, type: 3}
+  m_Sprite: {fileID: 6379233386089638682, guid: c32e2d706d280d044a69605efdd49c49, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -629,7 +629,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 7137212878804457893, guid: 2cea36b0269a41d42bc8817e222c5649, type: 3}
+  m_Sprite: {fileID: -5352670983735576961, guid: c82bf1fca43cd3c42b2803f35b22a535, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -1826,6 +1826,12 @@ MonoBehaviour:
   resultTitle: {fileID: 1612559676105957603}
   resultDetail: {fileID: 607157543983409739}
   safeArea: {fileID: 7355371715635239999}
+  healthIcon: {fileID: 6314756691241992924}
+  healthCritical: {fileID: 6379233386089638682, guid: c32e2d706d280d044a69605efdd49c49, type: 3}
+  healthHealing: {fileID: 3887482767316771717, guid: 4a8632b935819144897df02ae76e25da, type: 3}
+  healthGood: {fileID: -4131810696403034443, guid: d7bb196287302ef4797f0c6f350ced16, type: 3}
+  victoryArt: {fileID: 6811962689360592581, guid: 96bd95b4408fb8544923d093fa616aff, type: 3}
+  defeatArt: {fileID: -6987429530236980387, guid: f360b91bbd4f3cf4d84774f514d69b02, type: 3}
 --- !u!1 &7799613314277815248
 GameObject:
   m_ObjectHideFlags: 0

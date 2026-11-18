@@ -128,20 +128,18 @@ namespace Shared.HUD.Editor
                             "Restored towers still occupy their original cells");
                         Check(td.World.ExitedCount == 0 && session.Health == carriedHealth && session.Day == 2,
                             "New TD phase begins without old enemies or extra HP loss");
-                        session.Damage(session.Health);
-                        Vector3 position = td.Player.transform.position;
-                        td.Player.MoveStep(Vector2.right, 10);
-                        Check(session.HasEnded && Time.timeScale == 0 && td.Player.transform.position == position,
-                            "Zero HP freezes gameplay and blocks player movement");
-                        Check(session.transform.Find("SafeArea/RunResult").gameObject.activeSelf,
-                            "Game over result is visible over the frozen scene");
+                        session.Damage(session.Health + 5);
+                        Check(!session.HasEnded && Time.timeScale > 0 && session.Health == -5,
+                            "Health can drop below zero without ending the run");
+                        Check(!session.transform.Find("SafeArea/RunResult").gameObject.activeSelf,
+                            "No game over result is shown at negative HP");
                         frozenAt = EditorApplication.timeSinceStartup;
                         step++;
                         break;
                     case 4:
                         if (EditorApplication.timeSinceStartup - frozenAt < .2) return;
-                        Check(Time.timeScale == 0 && session.Health == 0 && session.Day == 2,
-                            "Game over remains frozen across subsequent frames");
+                        Check(!session.HasEnded && Time.timeScale > 0 && session.Health == -5 && session.Day == 2,
+                            "Negative HP run keeps playing across subsequent frames");
                         Finish(null);
                         break;
                 }

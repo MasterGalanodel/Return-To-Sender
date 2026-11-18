@@ -18,8 +18,12 @@ namespace Shared.HUD.Editor
             AssetDatabase.Refresh();
             var font = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
             if (!font) throw new System.InvalidOperationException("Import bundled TMP essentials before HUD setup.");
-            var healthIcon = LoadIcon("health");
-            var buildIcon = LoadIcon("build");
+            var healthCritical = LoadIcon("heath_critical");
+            var healthHealing = LoadIcon("health_healing");
+            var healthGood = LoadIcon("health_good");
+            var buildIcon = LoadIcon("build_icon");
+            var victoryArt = LoadIcon("victory_screen");
+            var defeatArt = LoadIcon("defeat_screen");
             // Load and edit the owned prefab in place on subsequent runs.
             bool existing = File.Exists(PrefabPath);
             var root = existing ? PrefabUtility.LoadPrefabContents(PrefabPath)
@@ -68,7 +72,7 @@ namespace Shared.HUD.Editor
                 days.alignment = TextAlignmentOptions.MidlineLeft;
                 var timer = Text(header, "Time", $"CAVE 0/{GameSession.CaveSeconds}s", font, 20, Color.white);
                 timer.alignment = TextAlignmentOptions.MidlineRight;
-                var health = Row(panel, "Health", "HEALTH", "50", new Color(1, .52f, .48f), font, healthIcon);
+                var health = Row(panel, "Health", "HEALTH", "50", new Color(1, .52f, .48f), font, healthCritical);
                 var towers = Row(panel, "TowerTokens", "BUILD TOKENS", "2", new Color(.46f, .89f, .76f), font, buildIcon);
                 var obsoleteUpdates = panel.Find("UpdateTokens");
                 if (obsoleteUpdates) Object.DestroyImmediate(obsoleteUpdates.gameObject);
@@ -95,6 +99,9 @@ namespace Shared.HUD.Editor
                 GetOrAdd<UnityEngine.UI.LayoutElement>(detail.gameObject).preferredHeight = 76;
                 result.gameObject.SetActive(false);
                 hud.Configure(health, towers, safe, days, timer, result, title, detail);
+                var healthImage = health.transform.parent.Find("Icon").GetComponent<UnityEngine.UI.Image>();
+                hud.ConfigureHealthIcons(healthImage, healthCritical, healthHealing, healthGood);
+                hud.ConfigureEndScreen(victoryArt, defeatArt);
                 PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
             }
             finally
@@ -119,8 +126,9 @@ namespace Shared.HUD.Editor
         }
         private static Sprite LoadIcon(string name)
         {
-            // The supplied PNGs contain sliced sprites; load their sprite sub-assets without changing the imports.
-            var sprite = AssetDatabase.LoadAllAssetsAtPath("Assets/Shared/HUD/Art/" + name + ".png").OfType<Sprite>().FirstOrDefault();
+            // The supplied PNGs contain sliced sprites (plus a tiny stray slice); use the largest sprite sub-asset without changing the imports.
+            var sprite = AssetDatabase.LoadAllAssetsAtPath("Assets/Shared/Graphics/Art/" + name + ".png").OfType<Sprite>()
+                .OrderByDescending(s => s.rect.width * s.rect.height).FirstOrDefault();
             if (!sprite) throw new System.InvalidOperationException("Missing HUD sprite: " + name);
             return sprite;
         }

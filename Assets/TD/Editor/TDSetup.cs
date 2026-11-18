@@ -106,7 +106,7 @@ namespace TD.Editor
             controls.transform.SetParent(camera.transform, false);
             controls.transform.localPosition = new Vector3(0, -settings.cameraZoom + .35f, 10);
             controls.gameObject.layer = 30;
-            controls.text = "B   BUILD / UPGRADE TOWER        C   COLLECT DROPS";
+            controls.text = "";
             controls.font = font; controls.fontSize = 2; controls.color = new Color(.64f, .79f, .87f);
             controls.alignment = TMPro.TextAlignmentOptions.Center;
             controls.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
@@ -141,7 +141,7 @@ namespace TD.Editor
             shapes.player = GameplaySprite("mc");
             shapes.enemy = GameplaySprite("enemy1");
             shapes.tower = GameplaySprite("castle");
-            shapes.buildReward = SpriteAt("Assets/Shared/HUD/Art/build.png");
+            shapes.buildReward = LargestSprite("Assets/Shared/Graphics/Art/build_icon.png");
             shapes.claw = SpriteAt("Assets/Shared/Claw/Art/claw.png");
             shapes.destroyedFrames = FramesAt("Assets/Shared/Graphics/Art/destroyed_sprite_sheet.png");
             // Sheet slices run 8 per row: row 2 is 8-15 (idle 8-11, walk 12-15), row 3 starts at 16 (back view).
@@ -215,6 +215,15 @@ namespace TD.Editor
         private static Sprite GameplaySprite(string name)
         {
             return SpriteAt("Assets/Shared/Graphics/Art/" + name + ".png");
+        }
+
+        // Some PNGs contain a tiny stray slice; use the largest sprite sub-asset.
+        private static Sprite LargestSprite(string path)
+        {
+            var sprite = AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>()
+                .OrderByDescending(s => s.rect.width * s.rect.height).FirstOrDefault();
+            if (!sprite) throw new InvalidOperationException("Missing gameplay sprite: " + path);
+            return sprite;
         }
 
         private static Sprite SpriteAt(string path)

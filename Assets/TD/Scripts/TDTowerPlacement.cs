@@ -2,7 +2,6 @@ using Shared.Graphics;
 using Shared.HUD;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace TD
 {
@@ -21,12 +20,6 @@ namespace TD
         // Configures map, player, settings, and shape generator references.
         public void Initialize(TDMap hexMap, TDPlayer actor, TDSettings config, SharedShapes sprites)
         { map = hexMap; player = actor; settings = config; shapes = sprites; }
-
-        // Listens for placement keystrokes to trigger tower creation at the player's position.
-        private void Update()
-        {
-            if (Keyboard.current != null && Keyboard.current.bKey.wasPressedThisFrame) TryPlaceCurrent();
-        }
 
         // Attempts to construct a new tower on the cell currently occupied by the player.
         public bool TryPlaceCurrent() => TryPlace(player.CurrentCell, out _);

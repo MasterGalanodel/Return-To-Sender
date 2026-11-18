@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 2cea36b0269a41d42bc8817e222c5649
+guid: 798482943ca59004ab2a76792f65734c
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 7137212878804457893
-    second: build_0
+      213: -1233775584600522972
+    second: backpack_flame_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -126,13 +126,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: build_0
+      name: backpack_flame_0
       rect:
         serializedVersion: 2
-        x: 15
-        y: 14
-        width: 483
-        height: 483
+        x: 12
+        y: 0
+        width: 152
+        height: 302
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -141,8 +141,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 5a99b777c497c0360800000000000000
-      internalID: 7137212878804457893
+      spriteID: 42ff55384afb0eee0800000000000000
+      internalID: -1233775584600522972
       vertices: []
       indices: 
       edges: []
@@ -161,7 +161,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      build_0: 7137212878804457893
+      backpack_flame_0: -1233775584600522972
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

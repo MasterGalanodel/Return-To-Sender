@@ -15,7 +15,11 @@ namespace TD
         public bool Finished { get; private set; }
 
         // Sets the simulation context, locked target enemy, and birth frame for collision evaluation.
-        public void Initialize(TDWorld context, TDEnemy selected) { world=context; target=selected; spawnFrame=Time.frameCount; }
+        public void Initialize(TDWorld context, TDEnemy selected, TDSettings.TowerLevel source = null)
+        { world=context; target=selected; spawnFrame=Time.frameCount; shooter=source; }
+
+        // Tower level that fired this shot; its splash settings apply on impact.
+        private TDSettings.TowerLevel shooter;
 
         // Advances projectile flight each frame based on delta time.
         private void Update() { Step(Time.deltaTime); }
@@ -47,6 +51,8 @@ namespace TD
                 Finish();
                 world.RecordHit();
                 hit.ApplyDamage(world.Settings.projectileDamage);
+                if (shooter != null && shooter.splashRadius > 0)
+                    world.Splash(transform.position, shooter.splashRadius, shooter.splashDamage, hit, shooter.splashParticles);
             }
             else transform.position=end;
         }

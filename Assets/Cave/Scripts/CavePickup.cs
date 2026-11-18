@@ -37,7 +37,13 @@ namespace Cave
         {
             if (!other.GetComponent<CaveWalker>()) return;
             var session = GameSession.Instance;
-            if (session && session.TryCollectCavePickup(pickupId, kind, amount)) gameObject.SetActive(false);
+            if (!session || !session.TryCollectCavePickup(pickupId, kind, amount)) return;
+            if (kind == GameSession.PickupType.Health)
+            {
+                var settings = FindAnyObjectByType<CaveExploration>()?.settings;
+                if (settings) Shared.Audio.SharedAudio.PlaySfx(settings.healSound, settings.healVolume);
+            }
+            gameObject.SetActive(false);
         }
     }
 }

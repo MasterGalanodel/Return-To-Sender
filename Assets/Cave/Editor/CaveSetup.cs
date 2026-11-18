@@ -39,8 +39,8 @@ namespace Cave.Editor
             if (!shapes || !shapes.player || !shapes.triangle || !shapes.unlitMaterial)
                 throw new InvalidOperationException("Shared graphics assets are missing. Run Tools/Shared/Graphics/Assign Gameplay Sprites.");
             var platformArt = new [] { LoadSprite("Assets/Shared/Graphics/Art/platform1.png"), LoadSprite("Assets/Shared/Graphics/Art/platform2.png") };
-            var healthArt = LoadSprite("Assets/Shared/HUD/Art/health.png");
-            var buildArt = LoadSprite("Assets/Shared/HUD/Art/build.png");
+            var healthArt = LargestSprite("Assets/Shared/Graphics/Art/health_icon.png");
+            var buildArt = LargestSprite("Assets/Shared/Graphics/Art/build_icon.png");
             var font = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
             if (!font) throw new InvalidOperationException("The bundled TMP font is missing.");
             Sprite solid = SolidSprite();
@@ -84,8 +84,7 @@ namespace Cave.Editor
             EditorUtility.SetDirty(builder);
             cave.builder = builder;
             cave.settings = LoadOrCreateSettings();
-            Text(environment, "Controls", "A/D   MOVE\nSPACE   JUMP / BOOST UP\nS + SPACE   DROP / BOOST DOWN\n"
-                + $"<color=#FFC266>CLIMB BACK TO THIS TD DOOR\nWITHIN {GameSession.CaveSeconds}s OR LOSE HP</color>", font, 1.8f,
+            Text(environment, "Controls", $"<color=#FFC266>CLIMB BACK TO THIS TD DOOR\nWITHIN {GameSession.CaveSeconds}s OR LOSE HP</color>", font, 1.8f,
                 new Vector2(3.4f, 2.8f), new Vector2(3.6f, 2), new Color(.64f, .79f, .87f));
             cave.controlsLabel = environment.Find("Controls");
             var gate = Child(environment, "TD Exit");
@@ -93,8 +92,8 @@ namespace Cave.Editor
             gate.localPosition = new Vector3(0, cave.settings.exitHeightAbovePlatform01, 0);
             Rect(gate, "Frame", solid, shapes, new Vector2(0, .85f), new Vector2(1.1f, 1.7f), new Color(.12f, .72f, .78f), 8);
             Rect(gate, "Opening", solid, shapes, new Vector2(0, .8f), new Vector2(.78f, 1.5f), new Color(.035f, .12f, .2f), 9);
-            Text(gate, "Exit Label", "TD", font, 4.2f, new Vector2(0, 1.05f), new Vector2(1, .7f), Color.white);
-            Text(gate, "Exit Caption", "TOWER DEFENSE", font, 2, new Vector2(0, 2.1f), new Vector2(3, .5f), new Color(.6f, 1, 1));
+            Text(gate, "Exit Label", "EXIT", font, 2.4f, new Vector2(0, 1.05f), new Vector2(1, .7f), Color.white);
+            Text(gate, "Exit Caption", "CAVE EXIT", font, 2, new Vector2(0, 2.1f), new Vector2(3, .5f), new Color(.6f, 1, 1));
             var exitTrigger = GetOrAdd<BoxCollider2D>(gate.gameObject);
             exitTrigger.isTrigger = true;
             exitTrigger.size = new Vector2(.9f, 1.5f);
@@ -118,11 +117,11 @@ namespace Cave.Editor
             float visualScale = CaveExploration.PlayerHeight / idle[0].bounds.size.y; // same sizing CaveWalker uses in play
             visual.transform.localScale = Vector3.one * visualScale;
             visual.transform.localPosition = new Vector3(0, -CaveExploration.PlayerHalfHeight - idle[0].bounds.min.y * visualScale, 0);
-            var fire = Sprite(player, "Jet Fire", LoadSprite("Assets/Shared/Graphics/Art/fire.png"), shapes, Color.white, 29);
+            var fire = Sprite(player, "Jet Fire", LoadSprite("Assets/Shared/Graphics/Art/backpack_flame.png"), shapes, Color.white, 29);
             fire.enabled = false;
             var body = GetOrAdd<Rigidbody2D>(player.gameObject);
             body.bodyType = RigidbodyType2D.Dynamic;
-            body.gravityScale = .28f;
+            body.gravityScale = .56f;
             body.linearDamping = 0;
             body.constraints = RigidbodyConstraints2D.FreezeRotation;
             body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
@@ -209,6 +208,15 @@ namespace Cave.Editor
             text.rectTransform.sizeDelta = bounds;
             text.GetComponent<MeshRenderer>().sortingOrder = 20;
         }
+        // The pickup PNGs may contain a tiny stray slice; use the largest sprite sub-asset.
+        private static Sprite LargestSprite(string path)
+        {
+            var sprite = AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>()
+                .OrderByDescending(s => s.rect.width * s.rect.height).FirstOrDefault();
+            if (!sprite) throw new InvalidOperationException("Missing Cave sprite: " + path);
+            return sprite;
+        }
+
         private static Sprite LoadSprite(string path)
         {
             var sprite = AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>().FirstOrDefault();

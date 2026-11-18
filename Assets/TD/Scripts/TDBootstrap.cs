@@ -32,6 +32,7 @@ namespace TD
         private void Update()
         {
             if (!Initialized || Transitioning) return;
+            if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame) Interact();
             var session = GameSession.Instance;
             if (!session || session.HasEnded || session.PhaseComplete) return;
             session.StepPhase(Time.deltaTime);
@@ -41,6 +42,13 @@ namespace TD
             World?.Retreat();
             if (session.FinishTowerDefense())
                 SceneManager.LoadSceneAsync(Cave.CaveExploration.ScenePath, LoadSceneMode.Single);
+        }
+
+        // Space: claw any tokens in reach; with none to grab, build or upgrade the tower on the player's fence cell.
+        public bool Interact()
+        {
+            if (Claw && Claw.TryCollect()) return true;
+            return Placement && Placement.TryPlaceCurrent();
         }
 
         // Starts prototype initialization and adds the build smoke test runner if requested via command-line flags.

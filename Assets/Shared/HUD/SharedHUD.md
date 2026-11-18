@@ -4,7 +4,7 @@ Open `Assets/Cave/Scenes/CaveExploration.unity` and press Play. The same Cave sc
 
 `Day 1 Cave -> TD -> Day 2 Cave -> TD -> ... -> Day 6 Cave -> TD -> result`
 
-The top-center HUD shows day and scene elapsed time on one line, followed by Health and Build Tokens. The supplied `Art/health.png` and `Art/build.png` sprite sub-assets are referenced by the HUD prefab. New runs start at **50 HP** and **2 build tokens**. Update Tokens are no longer displayed.
+The top-center HUD shows day and scene elapsed time on one line, followed by Health and Build Tokens. The Health icon swaps by HP: `Shared/Graphics/Art/heath_critical.png` below 60, `health_healing.png` from 60 to 80, and `health_good.png` above 80. Build Tokens use `Shared/Graphics/Art/build_icon.png`. New runs start at **50 HP** and **2 build tokens**. Update Tokens are no longer displayed.
 
 ## Rules
 
@@ -13,10 +13,11 @@ The top-center HUD shows day and scene elapsed time on one line, followed by Hea
 - Reaching the Cave exit starts that day's TD phase with a fresh timer.
 - Each successfully placed tower costs 1 build token. Occupied/invalid cells cost nothing. At zero tokens the number is red; a valid construction attempt flashes it and places no tower.
 - Each enemy reaching the TD exit costs 1 shared HP. Killed or retreating enemies cost no HP.
-- Killed TD enemies explode and have a 20% chance to drop a +1 build token within 2 world units. Stand within 0.6 units and press **C** to retrieve one with the claw; tokens are credited when retrieval finishes. See `Assets/TD/EnemyRewards.md`.
+- Killed TD enemies explode and have a 20% chance to drop a +1 build token within 2 world units. Press **Space** to claw every token within the day's radius (0.6 units on day 1, growing each day); with none in reach, Space builds or upgrades a tower; tokens are credited when retrieval finishes. See `Assets/TD/EnemyRewards.md`.
 - TD ends at 60 seconds. Remaining enemies/projectiles disappear without escape damage. The next day reuses the same Cave scene, starting at its entrance. Tower cells persist, and towers return to their original positions on the next TD visit without another charge.
-- Zero HP immediately freezes gameplay and shows **GAME OVER**.
-- Finishing day 6 with **more than 80 HP** freezes gameplay and shows **VICTORY**. At 80 HP or less it shows **GAME OVER**. There is no restart button; stop and restart Play mode for a fresh run.
+- HP can go below zero (shown as a negative number); the run keeps going and only the day-6 check decides the outcome.
+- Finishing day 6 with **more than 80 HP** freezes gameplay and shows the full-screen **VICTORY** end screen (`victory_screen.png`). At 80 HP or less it shows **DEFEAT** (`defeat_screen.png`). The end screen (`Scripts/EndScreen.cs`, built in code) has **Restart** (resets the session and loads build scene 0, the Cave) and **Exit** (quits the player / stops Play mode in the editor), plus a **Difficulty** slider from ×0.25 to ×4 (log scale, ×1 centered, default ×1). Difficulty is stored in `GameSession.Difficulty` (resets to ×1 each app launch, kept across Restart) and TD divides the enemy spawn interval by it (×4 = four times as many enemies), starting with the next run. If the art references are missing, the old small result panel is shown instead.
+- On app launch the Cave shows a **start screen** (`Scripts/OpeningSplash.cs`, title art `opening.png`) with the intro text, the same **Difficulty** slider, and **Play** / **Exit** buttons. Gameplay stays paused (timeScale 0) until Play is pressed; Restart from the end screen skips it. Both screens share their code-built UI pieces in `Scripts/MenuUI.cs`.
 - The 40-step Cave supplies eight health pickups (+5 HP each) and four build pickups (+1 each) per day. Collect each once per day; reloading the same day cannot duplicate rewards. Health can exceed 80.
 
 ## Setup and gameplay API

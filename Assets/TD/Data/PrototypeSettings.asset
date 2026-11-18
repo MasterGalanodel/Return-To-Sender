@@ -20,14 +20,44 @@ MonoBehaviour:
   - sprite: {fileID: 21300000, guid: 7be83f575f941a144836e03370e4522a, type: 3}
     cost: 1
     height: 0.8
+    spawnWeight: 1
     muzzles:
     - {x: 0.52, y: 0.97}
+    emblem: {fileID: 0}
+    emblemCenter: {x: 0.5, y: 0.43}
+    emblemHeight: 0.22
+    emblemColor: {r: 1, g: 1, b: 1, a: 1}
+    splashRadius: 0
+    splashDamage: 0
+    splashParticles: 6
   - sprite: {fileID: 21300000, guid: c709502e0ada71d4ca38a13ff2763e79, type: 3}
-    cost: 2
+    cost: 1
     height: 0.75
+    spawnWeight: 1.2
     muzzles:
     - {x: 0.323, y: 0.98}
     - {x: 0.692, y: 0.98}
+    emblem: {fileID: 0}
+    emblemCenter: {x: 0.5, y: 0.43}
+    emblemHeight: 0.22
+    emblemColor: {r: 1, g: 1, b: 1, a: 1}
+    splashRadius: 0
+    splashDamage: 0
+    splashParticles: 6
+  - sprite: {fileID: 21300000, guid: c709502e0ada71d4ca38a13ff2763e79, type: 3}
+    cost: 2
+    height: 0.75
+    spawnWeight: 1.5
+    muzzles:
+    - {x: 0.323, y: 0.98}
+    - {x: 0.692, y: 0.98}
+    emblem: {fileID: 4671882181192677614, guid: e619cc300f3d80f40b8800a486f3c50c, type: 3}
+    emblemCenter: {x: 0.5, y: 0.43}
+    emblemHeight: 0.22
+    emblemColor: {r: 1, g: 1, b: 1, a: 1}
+    splashRadius: 1
+    splashDamage: 1
+    splashParticles: 7
   projectileSpeed: 8
   projectileDamage: 1
   projectileLifetime: 8
@@ -35,21 +65,27 @@ MonoBehaviour:
   enemyHealth: 5
   towerDefenseSeconds: 40
   spawnIntervalFactor:
-  - 1
-  - 0.5
-  - 0.25
-  - 0.1
-  - 0.05
-  - 0.02
+  - 8
+  - 6
+  - 5.5
+  - 5
+  - 4.5
+  - 4
   buildRewardDropChancePerDay:
   - 0.2
-  - 0.12
-  - 0.07
+  - 0.3
+  - 0.2
   - 0.2
   - 0.1
   - 0.1
   buildRewardDropRadius: 2
-  buildRewardCollectRadius: 0.6
+  buildRewardCollectRadiusPerDay:
+  - 0.6
+  - 0.9
+  - 1.2
+  - 1.5
+  - 1.8
+  - 2.1
   cameraZoom: 3.9
   packagedTerrain: {fileID: 4900000, guid: 5b20f8bc5d849e140be8f9cb3b102a08, type: 3}
   preferExternalMapInEditor: 0
@@ -70,3 +106,8 @@ MonoBehaviour:
   roadStraight: {fileID: 21300000, guid: 2903e7c428517f445b0754707f1098f4, type: 3}
   roadTurn: {fileID: 21300000, guid: 3507bb6e725f348479b5625e67055e0e, type: 3}
   roadJunction: {fileID: 21300000, guid: 6265936ff3f1fa74ca5cf330754114d9, type: 3}
+  towerShotSound: {fileID: 8300000, guid: 35e669263fe9e9b4eb376c3ca1ab648e, type: 3}
+  towerShotVolume: 0.5
+  towerShotMinInterval: 0.06
+  enemyDeathSound: {fileID: 8300000, guid: b669dbd938b95334095490338c284db7, type: 3}
+  enemyDeathVolume: 0.8

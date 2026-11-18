@@ -25,22 +25,22 @@ MonoBehaviour:
     healthPerPickup: 1
     buildPerPickup: 1
   - platformLayers: 25
-    healthPickups: 10
+    healthPickups: 12
     buildPickups: 0
     healthPerPickup: 1
     buildPerPickup: 1
   - platformLayers: 30
-    healthPickups: 10
+    healthPickups: 13
     buildPickups: 0
     healthPerPickup: 1
     buildPerPickup: 1
   - platformLayers: 35
-    healthPickups: 10
+    healthPickups: 14
     buildPickups: 0
     healthPerPickup: 1
     buildPerPickup: 1
   - platformLayers: 40
-    healthPickups: 10
+    healthPickups: 15
     buildPickups: 0
     healthPerPickup: 1
     buildPerPickup: 1
@@ -50,7 +50,7 @@ MonoBehaviour:
   maxSideStep: 4.2
   secondPlatformChance: 0.25
   restPlatformEvery: 10
-  maxPickupsPerPlatform: 2
+  maxPickupsPerPlatform: 1
   exitHeightAbovePlatform01: 1.9
   faithfulFromDay: 2
   faithfulHeight: 0.85
@@ -59,8 +59,13 @@ MonoBehaviour:
     are over there'
   boostUpAcceleration: 12
   maxBoostRiseSpeed: 11
-  boostDownAcceleration: 24
+  boostDownAcceleration: 100
   maxBoostFallSpeed: 22
   overtimeFlashInterval: 1
   overtimeFlashDuration: 0.3
   overtimeFlashColor: {r: 1, g: 0.08, b: 0.05, a: 0.9}
+  bgm: {fileID: 8300000, guid: 4a9f3b9d68cdc7e49947b5a454910e09, type: 3}
+  bgmLoopSeconds: 18
+  bgmVolume: 0.6
+  healSound: {fileID: 8300000, guid: 776851cf2bc5198418a659cfe0e75cb5, type: 3}
+  healVolume: 1

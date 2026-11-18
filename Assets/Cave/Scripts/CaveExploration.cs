@@ -59,6 +59,7 @@ namespace Cave
                 overtimeFlash = builder.BuildOvertimeFlash(caveCamera, settings.overtimeFlashColor);
                 player.Initialize(this, existingInputActions);
                 Initialized = true;
+                Shared.Audio.SharedAudio.PlayBgm(settings.bgm, settings.bgmVolume, 0, settings.bgmLoopSeconds);
                 if (openingArt) OpeningSplash.ShowOnce(openingArt);
                 player.Launch(cave.spawn, Vector2.zero, 0, 0);
                 UpdateCamera(true);

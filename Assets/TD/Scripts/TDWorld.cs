@@ -76,8 +76,10 @@ namespace TD
                 KilledCount++;
                 if (!CanSimulate) return;
                 TDEnemyExplosion.Spawn(this, enemy.transform.position);
+                Shared.Audio.SharedAudio.PlaySfx(Settings.enemyDeathSound, Settings.enemyDeathVolume, .03f);
+                // The first kill of each TD phase always drops a token; later kills roll the day's chance.
                 float dropChance = Settings.BuildRewardDropChanceOnDay(GameSession.Instance ? GameSession.Instance.Day : 1);
-                if (dropChance >= 1 || (dropChance > 0 && Random.value < dropChance))
+                if (KilledCount == 1 || dropChance >= 1 || (dropChance > 0 && Random.value < dropChance))
                     SpawnBuildReward(enemy.transform.position);
             }
         }
@@ -105,14 +107,37 @@ namespace TD
         public void RemoveReward(TDRewardPickup reward) { rewards.Remove(reward); }
 
         // Instantiates and tracks a homing projectile directed at a specific target enemy.
-        public TDProjectile FireProjectile(Vector3 position, TDEnemy target)
+        // A shot from a splash level is tinted orange and blasts the area it hits.
+        public TDProjectile FireProjectile(Vector3 position, TDEnemy target, TDSettings.TowerLevel source = null)
         {
-            var renderer=Shapes.Create("Projectile",Shapes.circle,Color.yellow,position,.13f,25,ActorsRoot);
+            bool splash = source != null && source.splashRadius > 0;
+            var renderer=Shapes.Create("Projectile",Shapes.circle,splash ? SplashColor : Color.yellow,position,splash ? .16f : .13f,25,ActorsRoot);
             var projectile=renderer.gameObject.AddComponent<TDProjectile>();
-            projectile.Initialize(this,target);
+            projectile.Initialize(this,target,source);
             projectiles.Add(projectile);
             ShotsFired++;
             return projectile;
+        }
+
+        public static readonly Color SplashColor = new Color(1f, .55f, .15f);
+        private readonly List<TDEnemy> splashBuffer = new List<TDEnemy>();
+
+        // Plays the splash burst and damages every living enemy (except the one hit directly) touching the radius.
+        public void Splash(Vector3 center, float radius, float damage, TDEnemy directHit, int particles)
+        {
+            if (!CanSimulate) return;
+            TDSplashBurst.Spawn(this, center, radius, particles);
+            if (damage <= 0) return;
+            // Copy first: kills remove enemies from the live list.
+            splashBuffer.Clear();
+            foreach (var enemy in enemies)
+            {
+                if (!enemy || !enemy.IsAlive || enemy == directHit) continue;
+                float reach = radius + TDEnemy.Radius;
+                if (((Vector2)(enemy.transform.position - center)).sqrMagnitude <= reach * reach) splashBuffer.Add(enemy);
+            }
+            foreach (var enemy in splashBuffer) if (enemy) enemy.ApplyDamage(damage);
+            splashBuffer.Clear();
         }
 
         // Increments the total count of successful projectile impacts.

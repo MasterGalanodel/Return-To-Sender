@@ -39,7 +39,7 @@ MonoBehaviour:
   - {fileID: -6273612521020164435, guid: c5a5f03d6f1410d4981482599003ff12, type: 3}
   - {fileID: -4695294330726450837, guid: c5a5f03d6f1410d4981482599003ff12, type: 3}
   tower: {fileID: -5119980863986964875, guid: 6ba8b6bf8dd38f64a97a011e7a33b0e2, type: 3}
-  buildReward: {fileID: 7137212878804457893, guid: 2cea36b0269a41d42bc8817e222c5649, type: 3}
+  buildReward: {fileID: -5352670983735576961, guid: c82bf1fca43cd3c42b2803f35b22a535, type: 3}
   claw: {fileID: 8001869892075530964, guid: 3e367ea210532af419dfca90d05c16f0, type: 3}
   destroyedFrames:
   - {fileID: 2280296408748459264, guid: 6b5e2bf75c37d244191808df7332cf52, type: 3}

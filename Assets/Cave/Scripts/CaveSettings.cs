@@ -73,6 +73,15 @@ namespace Cave
         [Min(.01f)] public float overtimeFlashDuration = .3f;
         public Color overtimeFlashColor = new Color(1, .08f, .05f, .9f);
 
+        [Header("Audio")]
+        public AudioClip bgm;
+        [Tooltip("BGM loops back to 0 after this many seconds. 0 = loop the whole clip.")]
+        [Min(0)] public float bgmLoopSeconds = 18;
+        [Range(0, 1)] public float bgmVolume = .6f;
+        [Tooltip("Played when a heart (health) pickup is collected.")]
+        public AudioClip healSound;
+        [Range(0, 1)] public float healVolume = 1;
+
         public DayLayout ForDay(int day)
         {
             if (days == null || days.Length == 0) return new DayLayout();

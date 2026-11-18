@@ -19,6 +19,16 @@ namespace Shared.HUD
         public static int TowerDefenseSeconds { get; private set; } = 60;
         public const int VictoryHealth = 80;
 
+        // Difficulty multiplier chosen on the start and end screens. TDSpawner divides the enemy spawn interval by it.
+        // Starts at ×1 every app launch; survives restarts within a launch (not touched by ResetForNewGame).
+        public const float MinDifficulty = .25f, MaxDifficulty = 4f, DefaultDifficulty = 1f;
+        private static float? difficulty;
+        public static float Difficulty
+        {
+            get => difficulty ??= DefaultDifficulty;
+            set => difficulty = Mathf.Clamp(value, MinDifficulty, MaxDifficulty);
+        }
+
         public static GameSession Instance { get; private set; }
         [Header("New game defaults")]
         [SerializeField, Min(0)] private int startingHealth = 50;
@@ -54,7 +64,7 @@ namespace Shared.HUD
 
         // Clears the static singleton reference on domain reload to prevent stale references in the editor.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatic() { Instance = null; }
+        private static void ResetStatic() { Instance = null; difficulty = null; }
 
         // Enforces the persistent singleton instance across scene loads and initializes starting stats.
         private void Awake()
@@ -71,22 +81,17 @@ namespace Shared.HUD
             ResetForNewGame();
         }
 
-        // Clamps and assigns player stats, raising the Changed event if any values differ.
+        // Assigns player stats (health may go negative; tokens are clamped at 0), raising Changed if any values differ.
         public void SetValues(int newHealth, int newTowerTokens, int newUpdateTokens)
         {
             if (HasEnded) return;
-            newHealth = Mathf.Max(0, newHealth);
             newTowerTokens = Mathf.Max(0, newTowerTokens);
             newUpdateTokens = Mathf.Max(0, newUpdateTokens);
             if (health == newHealth && towerTokens == newTowerTokens && updateTokens == newUpdateTokens) return;
             health = newHealth;
             towerTokens = newTowerTokens;
             updateTokens = newUpdateTokens;
-            if (health == 0)
-            {
-                EndRun(RunOutcome.Defeat, "Health reached zero.");
-                return;
-            }
+            // Running out of health no longer ends the run; only the day-6 HP check decides the outcome.
             Changed?.Invoke();
         }
 
@@ -151,7 +156,7 @@ namespace Shared.HUD
         {
             if (HasEnded || amount <= 0) return;
             int before = health;
-            Health = Mathf.Max(0, health - amount);
+            Health = health - amount;
             if (health < before) Damaged?.Invoke(before - health);
         }
 
@@ -216,8 +221,7 @@ namespace Shared.HUD
             health = Mathf.Max(0, startingHealth);
             towerTokens = Mathf.Max(0, startingTowerTokens);
             updateTokens = Mathf.Max(0, startingUpdateTokens);
-            if (health == 0) EndRun(RunOutcome.Defeat, "Health reached zero.");
-            else Changed?.Invoke();
+            Changed?.Invoke();
         }
 
         // Clears the singleton reference when this instance is destroyed.

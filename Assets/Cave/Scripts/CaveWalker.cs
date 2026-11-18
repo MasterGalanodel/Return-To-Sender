@@ -15,7 +15,7 @@ namespace Cave
         public Sprite[] moveFrames;
         [Min(.1f)] public float idleFps = 6;
         [Min(.1f)] public float moveFps = 12;
-        [Header("Jet fire (fire.png, drawn behind the player at the backpack)")]
+        [Header("Jet fire (backpack_flame.png, drawn behind the player at the backpack)")]
         public SpriteRenderer jetFire;
         public Vector2 backpackOffset = new Vector2(-.24f, -.02f);
         [Min(.05f)] public float fireHeight = .5f;

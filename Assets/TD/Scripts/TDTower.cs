@@ -17,6 +17,7 @@ namespace TD
         public bool drawRangeGizmo = true;
         public TDEnemy LastTarget { get; private set; }
         public int Level { get; private set; }
+        private SpriteRenderer emblem;
         private TDSettings.TowerLevel Stats => settings.towerLevels[Level];
 
         // Assigns the configuration parameters and the starting upgrade level.
@@ -33,6 +34,38 @@ namespace TD
             var renderer = GetComponent<SpriteRenderer>();
             renderer.sprite = Stats.sprite;
             transform.localScale = Vector3.one * SharedShapes.ActorScale(Stats.sprite, Stats.height);
+            UpdateEmblem(renderer);
+        }
+
+        // Shows the level's emblem as a child centred on emblemCenter, or removes it when the level has none.
+        // It is a child, so it turns with the turret.
+        private void UpdateEmblem(SpriteRenderer turret)
+        {
+            if (!Stats.emblem)
+            {
+                if (emblem) Destroy(emblem.gameObject);
+                emblem = null;
+                return;
+            }
+            if (!emblem)
+            {
+                var go = new GameObject("Emblem");
+                go.layer = gameObject.layer;
+                go.transform.SetParent(transform, false);
+                emblem = go.AddComponent<SpriteRenderer>();
+            }
+            emblem.sprite = Stats.emblem;
+            emblem.color = Stats.emblemColor;
+            emblem.sharedMaterial = turret.sharedMaterial;
+            emblem.sortingLayerID = turret.sortingLayerID;
+            emblem.sortingOrder = turret.sortingOrder + 1;
+            // Child scale is relative to the turret's own scale; the emblem is placed by its bounds centre so its pivot does not matter.
+            float scale = Stats.emblemHeight / (Stats.emblem.bounds.size.y * transform.localScale.y);
+            Bounds bounds = Stats.sprite.bounds;
+            Vector3 center = bounds.min + Vector3.Scale(bounds.size, new Vector3(Stats.emblemCenter.x, Stats.emblemCenter.y, 0));
+            emblem.transform.localScale = Vector3.one * scale;
+            emblem.transform.localRotation = Quaternion.identity;
+            emblem.transform.localPosition = center - Stats.emblem.bounds.center * scale;
         }
 
         // Links the tower to the active world simulation to begin acquiring targets and firing.
@@ -56,7 +89,8 @@ namespace TD
             float turned=Mathf.MoveTowardsAngle(current,wanted,settings.towerTurnSpeed*deltaTime);
             transform.rotation=Quaternion.Euler(0,0,turned);
             if(cooldown>0 || Mathf.Abs(Mathf.DeltaAngle(turned,wanted))>AimTolerance) return;
-            foreach(Vector2 muzzle in Stats.muzzles) world.FireProjectile(MuzzleWorld(muzzle),LastTarget);
+            foreach(Vector2 muzzle in Stats.muzzles) world.FireProjectile(MuzzleWorld(muzzle),LastTarget,Stats);
+            Shared.Audio.SharedAudio.PlaySfx(settings.towerShotSound,settings.towerShotVolume,settings.towerShotMinInterval);
             cooldown=1/settings.towerFireRate;
         }
 

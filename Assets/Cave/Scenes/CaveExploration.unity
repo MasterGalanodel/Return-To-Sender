@@ -552,12 +552,12 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 29
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 8334651344603559088, guid: 7814610ad957ae54c9ab508e0eb50602, type: 3}
+  m_Sprite: {fileID: -1233775584600522972, guid: 798482943ca59004ab2a76792f65734c, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 3.58, y: 4.82}
+  m_Size: {x: 1.52, y: 3.02}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -793,7 +793,7 @@ Rigidbody2D:
   m_Mass: 1
   m_LinearDamping: 0
   m_AngularDamping: 0.05
-  m_GravityScale: 0.28
+  m_GravityScale: 0.56
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -862,7 +862,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: TOWER DEFENSE
+  m_text: CAVE EXIT
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1139,7 +1139,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: TD
+  m_text: EXIT
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1166,8 +1166,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 4.2
-  m_fontSizeBase: 4.2
+  m_fontSize: 2.4
+  m_fontSizeBase: 2.4
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -1320,14 +1320,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'A/D   MOVE
-
-    SPACE   JUMP / BOOST UP
-
-    S + SPACE   DROP / BOOST
-    DOWN
-
-    <color=#FFC266>CLIMB BACK TO THIS TD DOOR
+  m_text: '<color=#FFC266>CLIMB BACK TO THIS TD DOOR
 
     WITHIN 20s OR LOSE HP</color>'
   m_isRightToLeft: 0
@@ -1506,8 +1499,8 @@ MonoBehaviour:
   - {fileID: -5673636518985711193, guid: 1765a7617384c384da941fe58cdfd6cf, type: 3}
   groundArt: {fileID: 5394742849123826356, guid: 565effdcf9ec8234a83cfd24f902d306, type: 3}
   faithfulArt: {fileID: 8900219587452976502, guid: 10eefe1f8b5eef84fb705f07ee638bff, type: 3}
-  healthIcon: {fileID: -5185649437945853404, guid: 640a2e1b6cedd664a952cef3777e81ee, type: 3}
-  buildIcon: {fileID: 7137212878804457893, guid: 2cea36b0269a41d42bc8817e222c5649, type: 3}
+  healthIcon: {fileID: 2248882830714239436, guid: c9c20907cbd343d4c9a71bd6e280b488, type: 3}
+  buildIcon: {fileID: -5352670983735576961, guid: c82bf1fca43cd3c42b2803f35b22a535, type: 3}
   unlitMaterial: {fileID: 2100000, guid: 3af2bb8dae58e97479520170e4e48e86, type: 2}
   font: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   wallMaterial: {fileID: 6200000, guid: bc77cc148ec98104cb01a97265aa1e74, type: 2}

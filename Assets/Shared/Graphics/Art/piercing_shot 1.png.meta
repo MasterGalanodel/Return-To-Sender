@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 6ba8b6bf8dd38f64a97a011e7a33b0e2
+guid: e619cc300f3d80f40b8800a486f3c50c
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -5119980863986964875
-    second: castle_0
+      213: 4671882181192677614
+    second: piercing_shot 1_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -126,13 +126,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: castle_0
+      name: piercing_shot 1_0
       rect:
         serializedVersion: 2
-        x: 15
-        y: 15
-        width: 482
-        height: 483
+        x: 0
+        y: 25
+        width: 479
+        height: 428
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -141,8 +141,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 5766241f78c22f8b0800000000000000
-      internalID: -5119980863986964875
+      spriteID: ee87772571cd5d040800000000000000
+      internalID: 4671882181192677614
       vertices: []
       indices: 
       edges: []
@@ -161,7 +161,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      castle_0: -5119980863986964875
+      piercing_shot 1_0: 4671882181192677614
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
