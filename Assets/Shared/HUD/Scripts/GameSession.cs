@@ -1,0 +1,235 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace Shared.HUD
+{
+    // Persists player stats across scenes and fires events whenever health or token balances change.
+    [DisallowMultipleComponent]
+    [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "TD", sourceAssembly: null, sourceClassName: "TDSession")]
+    public sealed class GameSession : MonoBehaviour
+    {
+        public enum PlayPhase { None, Cave, TowerDefense }
+        public enum RunOutcome { Playing, Victory, Defeat }
+        public enum PickupType { Health, Build }
+        public const int TotalDays = 6;
+        public const int CaveSeconds = 20;
+        public const int CaveOvertimeSeconds = 5;
+        // Set from the TD settings asset (TDSettings.towerDefenseSeconds) before each TD phase begins.
+        public static int TowerDefenseSeconds { get; private set; } = 60;
+        public const int VictoryHealth = 80;
+
+        // Difficulty multiplier chosen on the start and end screens. TDSpawner divides the enemy spawn interval by it.
+        // Starts at ×1 every app launch; survives restarts within a launch (not touched by ResetForNewGame).
+        public const float MinDifficulty = .25f, MaxDifficulty = 4f, DefaultDifficulty = 1f;
+        private static float? difficulty;
+        public static float Difficulty
+        {
+            get => difficulty ??= DefaultDifficulty;
+            set => difficulty = Mathf.Clamp(value, MinDifficulty, MaxDifficulty);
+        }
+
+        public static GameSession Instance { get; private set; }
+        [Header("New game defaults")]
+        [SerializeField, Min(0)] private int startingHealth = 50;
+        [SerializeField, Min(0)] private int startingTowerTokens = 2;
+        [SerializeField, Min(0)] private int startingUpdateTokens = 10;
+        private int health, towerTokens, updateTokens;
+        private double elapsedSeconds;
+        private int overtimePenalties;
+        private float timeScaleBeforeEnd = 1;
+        private readonly List<Vector2Int> towerCells = new List<Vector2Int>();
+        private readonly Dictionary<Vector2Int, int> towerLevels = new Dictionary<Vector2Int, int>();
+        private readonly HashSet<string> collectedCavePickups = new HashSet<string>();
+        public event Action Changed;
+        public event Action BuildDenied;
+        // Raised after Damage lowers Health, with the HP actually lost.
+        public event Action<int> Damaged;
+        public int Health { get => health; set => SetValues(value, towerTokens, updateTokens); }
+        public int TowerTokens { get => towerTokens; set => SetValues(health, value, updateTokens); }
+        public int UpdateTokens { get => updateTokens; set => SetValues(health, towerTokens, value); }
+        public int Day { get; private set; } = 1;
+        // Rolled once per run so each day's random Cave stays the same when re-entered, but differs between runs.
+        public int RunSeed { get; private set; } = 1;
+        public PlayPhase Phase { get; private set; }
+        public RunOutcome Outcome { get; private set; }
+        public bool HasEnded => Outcome != RunOutcome.Playing;
+        public bool PhaseComplete { get; private set; }
+        public float ElapsedSeconds => (float)elapsedSeconds;
+        public int PhaseDurationSeconds => Phase == PlayPhase.TowerDefense ? TowerDefenseSeconds : CaveSeconds;
+        public bool TowerDefenseExpired => Phase == PlayPhase.TowerDefense && elapsedSeconds >= TowerDefenseSeconds;
+        public bool IsOvertime => Phase == PlayPhase.Cave && elapsedSeconds > CaveSeconds;
+        public string ResultMessage { get; private set; }
+        public IReadOnlyList<Vector2Int> TowerCells => towerCells;
+
+        // Clears the static singleton reference on domain reload to prevent stale references in the editor.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatic() { Instance = null; difficulty = null; }
+
+        // Enforces the persistent singleton instance across scene loads and initializes starting stats.
+        private void Awake()
+        {
+            if (!Application.isPlaying) return;
+            if (Instance && Instance != this)
+            {
+                gameObject.SetActive(false);
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+            ResetForNewGame();
+        }
+
+        // Assigns player stats (health may go negative; tokens are clamped at 0), raising Changed if any values differ.
+        public void SetValues(int newHealth, int newTowerTokens, int newUpdateTokens)
+        {
+            if (HasEnded) return;
+            newTowerTokens = Mathf.Max(0, newTowerTokens);
+            newUpdateTokens = Mathf.Max(0, newUpdateTokens);
+            if (health == newHealth && towerTokens == newTowerTokens && updateTokens == newUpdateTokens) return;
+            health = newHealth;
+            towerTokens = newTowerTokens;
+            updateTokens = newUpdateTokens;
+            // Running out of health no longer ends the run; only the day-6 HP check decides the outcome.
+            Changed?.Invoke();
+        }
+
+        public static void ConfigureTowerDefenseSeconds(int seconds) { TowerDefenseSeconds = Math.Max(1, seconds); }
+
+        public void BeginPhase(PlayPhase phase)
+        {
+            if (HasEnded) return;
+            Phase = phase;
+            PhaseComplete = false;
+            elapsedSeconds = 0;
+            overtimePenalties = 0;
+            Changed?.Invoke();
+        }
+
+        public bool IsPhaseActive(PlayPhase phase) => !HasEnded && !PhaseComplete && Phase == phase
+            && (phase != PlayPhase.TowerDefense || elapsedSeconds < TowerDefenseSeconds);
+
+        // Scene controllers tick before movement/combat, so the TD deadline wins over same-frame escapes.
+        public void StepPhase(float deltaTime)
+        {
+            if (HasEnded || PhaseComplete || Phase == PlayPhase.None || deltaTime <= 0
+                || float.IsNaN(deltaTime) || float.IsInfinity(deltaTime)) return;
+            int previousSecond = (int)elapsedSeconds;
+            bool wasOvertime = IsOvertime;
+            elapsedSeconds += deltaTime;
+            if (Phase == PlayPhase.TowerDefense) elapsedSeconds = Math.Min(elapsedSeconds, TowerDefenseSeconds);
+            if (Phase == PlayPhase.Cave)
+            {
+                int due = (int)Math.Max(0, Math.Floor((elapsedSeconds - CaveSeconds) / CaveOvertimeSeconds));
+                int damage = due - overtimePenalties;
+                overtimePenalties = due;
+                if (damage > 0) Damage(damage);
+            }
+            if (!HasEnded && (previousSecond != (int)elapsedSeconds || wasOvertime != IsOvertime)) Changed?.Invoke();
+        }
+
+        public void FinishCave()
+        {
+            if (!IsPhaseActive(PlayPhase.Cave)) return;
+            PhaseComplete = true;
+            Changed?.Invoke();
+        }
+
+        // Returns true only when another visit to the same Cave scene should begin.
+        public bool FinishTowerDefense()
+        {
+            if (HasEnded || PhaseComplete || Phase != PlayPhase.TowerDefense || elapsedSeconds < TowerDefenseSeconds) return false;
+            PhaseComplete = true;
+            if (Day == TotalDays)
+            {
+                EndRun(health > VictoryHealth ? RunOutcome.Victory : RunOutcome.Defeat,
+                    health > VictoryHealth ? "Six days completed with more than 80 HP." : "Six days completed. Victory requires more than 80 HP.");
+                return false;
+            }
+            Day++;
+            Changed?.Invoke();
+            return true;
+        }
+
+        public void Damage(int amount)
+        {
+            if (HasEnded || amount <= 0) return;
+            int before = health;
+            Health = health - amount;
+            if (health < before) Damaged?.Invoke(before - health);
+        }
+
+        public bool TrySpendBuildToken() => TrySpendBuildTokens(1);
+
+        // Spends all of amount or none of it; a shortfall signals the HUD warning.
+        public bool TrySpendBuildTokens(int amount)
+        {
+            if (HasEnded || amount < 1) return false;
+            if (towerTokens < amount) { BuildDenied?.Invoke(); return false; }
+            TowerTokens -= amount;
+            return true;
+        }
+
+        // Records a tower and its upgrade level (0 = first level) so it is rebuilt on later days.
+        public void RememberTower(Vector2Int cell, int level = 0)
+        {
+            if (HasEnded) return;
+            if (!towerCells.Contains(cell)) towerCells.Add(cell);
+            towerLevels[cell] = Mathf.Max(0, level);
+        }
+
+        public int TowerLevelAt(Vector2Int cell) => towerLevels.TryGetValue(cell, out int level) ? level : 0;
+
+        public bool HasCollectedCavePickup(string pickupId) => collectedCavePickups.Contains(Day + ":" + pickupId);
+
+        public bool TryCollectCavePickup(string pickupId, PickupType kind, int amount)
+        {
+            if (!IsPhaseActive(PlayPhase.Cave) || string.IsNullOrEmpty(pickupId) || amount <= 0
+                || (kind != PickupType.Health && kind != PickupType.Build)) return false;
+            if (!collectedCavePickups.Add(Day + ":" + pickupId)) return false;
+            if (kind == PickupType.Health) Health += amount;
+            else TowerTokens += amount;
+            return true;
+        }
+
+        private void EndRun(RunOutcome outcome, string message)
+        {
+            if (HasEnded) return;
+            Outcome = outcome;
+            ResultMessage = message;
+            timeScaleBeforeEnd = Time.timeScale > 0 ? Time.timeScale : 1;
+            Time.timeScale = 0;
+            Changed?.Invoke();
+        }
+
+        // Future pickups can change Health/TowerTokens; this reset also clears all persisted towers.
+        public void ResetForNewGame()
+        {
+            if (HasEnded) Time.timeScale = timeScaleBeforeEnd;
+            Outcome = RunOutcome.Playing;
+            ResultMessage = null;
+            Day = 1;
+            RunSeed = UnityEngine.Random.Range(1, int.MaxValue);
+            Phase = PlayPhase.None;
+            PhaseComplete = false;
+            elapsedSeconds = 0;
+            overtimePenalties = 0;
+            towerCells.Clear();
+            towerLevels.Clear();
+            collectedCavePickups.Clear();
+            health = Mathf.Max(0, startingHealth);
+            towerTokens = Mathf.Max(0, startingTowerTokens);
+            updateTokens = Mathf.Max(0, startingUpdateTokens);
+            Changed?.Invoke();
+        }
+
+        // Clears the singleton reference when this instance is destroyed.
+        private void OnDestroy()
+        {
+            if (Instance != this) return;
+            if (HasEnded) Time.timeScale = timeScaleBeforeEnd;
+            Instance = null;
+        }
+    }
+}
