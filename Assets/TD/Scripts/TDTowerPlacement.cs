@@ -1,11 +1,11 @@
 using Shared.Graphics;
+using Shared.HUD;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace TD
 {
-    // Handles user input and mechanics for placing defensive towers onto valid grid cells.
+    // Handles user input for building towers on Fence (F) cells and upgrading the tower the player stands on.
     public sealed class TDTowerPlacement : MonoBehaviour
     {
         private TDMap map;
@@ -21,26 +21,56 @@ namespace TD
         public void Initialize(TDMap hexMap, TDPlayer actor, TDSettings config, SharedShapes sprites)
         { map = hexMap; player = actor; settings = config; shapes = sprites; }
 
-        // Listens for placement keystrokes to trigger tower creation at the player's position.
-        private void Update()
-        {
-            if (Keyboard.current != null && Keyboard.current.bKey.wasPressedThisFrame) TryPlaceCurrent();
-        }
-
         // Attempts to construct a new tower on the cell currently occupied by the player.
         public bool TryPlaceCurrent() => TryPlace(player.CurrentCell, out _);
 
-        // Instantiates and registers a tower at the given hex cell if the cell is valid and empty.
+        // Builds a first-level tower on an empty Fence cell, or upgrades the tower already standing
+        // there to its next level. Each step costs that level's tokens; nothing changes if they fall short.
         public bool TryPlace(Vector2Int cell, out TDTower tower)
         {
             tower = null;
-            if (!map.IsValid(cell) || towers.ContainsKey(cell)) return false;
-            var renderer = shapes.Create("Tower " + cell, shapes.triangle, Color.white, map.Center(cell), .6f, 10, transform);
-            tower = renderer.gameObject.AddComponent<TDTower>();
-            tower.Initialize(settings);
+            var session = GameSession.Instance;
+            if (!session || !session.IsPhaseActive(GameSession.PlayPhase.TowerDefense)) return false;
+            if (towers.TryGetValue(cell, out TDTower existing))
+            {
+                if (!CanUpgrade(cell)) return false;
+                int next = existing.Level + 1;
+                if (!session.TrySpendBuildTokens(settings.towerLevels[next].cost)) return false;
+                existing.SetLevel(next);
+                session.RememberTower(cell, next);
+                tower = existing;
+                return true;
+            }
+            if (!CanBuildOn(cell)) return false;
+            if (!session.TrySpendBuildTokens(settings.towerLevels[0].cost)) return false;
+            tower = CreateTower(cell, 0);
+            session.RememberTower(cell, 0);
+            return true;
+        }
+
+        // Restoring previously paid-for towers must not consume tokens a second time.
+        public void RestoreTowers()
+        {
+            var session = GameSession.Instance;
+            if (!session) return;
+            foreach (var cell in session.TowerCells)
+                if (CanBuildOn(cell)) CreateTower(cell, Mathf.Min(session.TowerLevelAt(cell), settings.towerLevels.Length - 1));
+        }
+
+        // Towers may only stand on unoccupied Fence cells.
+        public bool CanBuildOn(Vector2Int cell) => map.TerrainAt(cell) == TDMap.Fence && !towers.ContainsKey(cell);
+
+        // True when a tower stands on the cell and has a higher level left to buy.
+        public bool CanUpgrade(Vector2Int cell) => towers.TryGetValue(cell, out TDTower tower) && tower.Level + 1 < settings.towerLevels.Length;
+
+        private TDTower CreateTower(Vector2Int cell, int level)
+        {
+            var renderer = shapes.Create("Tower " + cell, settings.towerLevels[level].sprite, Color.white, map.Center(cell), 1, 10, transform);
+            var tower = renderer.gameObject.AddComponent<TDTower>();
+            tower.Initialize(settings, level);
             if(world!=null) tower.EnableCombat(world);
             towers.Add(cell, tower);
-            return true;
+            return tower;
         }
 
         // Clears all tracked tower instances when the placement manager is destroyed.

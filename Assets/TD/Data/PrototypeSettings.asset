@@ -15,13 +15,99 @@ MonoBehaviour:
   playerSpeed: 4
   towerRange: 3
   towerFireRate: 1
+  towerTurnSpeed: 540
+  towerLevels:
+  - sprite: {fileID: 21300000, guid: 7be83f575f941a144836e03370e4522a, type: 3}
+    cost: 1
+    height: 0.8
+    spawnWeight: 1
+    muzzles:
+    - {x: 0.52, y: 0.97}
+    emblem: {fileID: 0}
+    emblemCenter: {x: 0.5, y: 0.43}
+    emblemHeight: 0.22
+    emblemColor: {r: 1, g: 1, b: 1, a: 1}
+    splashRadius: 0
+    splashDamage: 0
+    splashParticles: 6
+  - sprite: {fileID: 21300000, guid: c709502e0ada71d4ca38a13ff2763e79, type: 3}
+    cost: 1
+    height: 0.75
+    spawnWeight: 1.2
+    muzzles:
+    - {x: 0.323, y: 0.98}
+    - {x: 0.692, y: 0.98}
+    emblem: {fileID: 0}
+    emblemCenter: {x: 0.5, y: 0.43}
+    emblemHeight: 0.22
+    emblemColor: {r: 1, g: 1, b: 1, a: 1}
+    splashRadius: 0
+    splashDamage: 0
+    splashParticles: 6
+  - sprite: {fileID: 21300000, guid: c709502e0ada71d4ca38a13ff2763e79, type: 3}
+    cost: 2
+    height: 0.75
+    spawnWeight: 1.5
+    muzzles:
+    - {x: 0.323, y: 0.98}
+    - {x: 0.692, y: 0.98}
+    emblem: {fileID: 4671882181192677614, guid: e619cc300f3d80f40b8800a486f3c50c, type: 3}
+    emblemCenter: {x: 0.5, y: 0.43}
+    emblemHeight: 0.22
+    emblemColor: {r: 1, g: 1, b: 1, a: 1}
+    splashRadius: 1
+    splashDamage: 1
+    splashParticles: 7
   projectileSpeed: 8
   projectileDamage: 1
   projectileLifetime: 8
   enemySpeed: 1
-  enemyHealth: 3
-  spawnInterval: 2
+  enemyHealth: 5
+  towerDefenseSeconds: 40
+  spawnIntervalFactor:
+  - 8
+  - 6
+  - 5.5
+  - 5
+  - 4.5
+  - 4
+  buildRewardDropChancePerDay:
+  - 0.2
+  - 0.3
+  - 0.2
+  - 0.2
+  - 0.1
+  - 0.1
+  buildRewardDropRadius: 2
+  buildRewardCollectRadiusPerDay:
+  - 0.6
+  - 0.9
+  - 1.2
+  - 1.5
+  - 1.8
+  - 2.1
   cameraZoom: 3.9
   packagedTerrain: {fileID: 4900000, guid: 5b20f8bc5d849e140be8f9cb3b102a08, type: 3}
-  preferExternalMapInEditor: 1
+  preferExternalMapInEditor: 0
   externalMapPath: E:\Miles\assets\arab_32x18.txt
+  desertTiles:
+  - {fileID: 11400000, guid: 16286f145c478ab47ac7d793312e0857, type: 2}
+  - {fileID: 11400000, guid: c055d2829f9211d4c82da9ff7dcdfdf0, type: 2}
+  - {fileID: 11400000, guid: 37118fae202d130478c4b6111f3c971f, type: 2}
+  desertNoiseScale: 0.08
+  desertNoiseOffset: {x: 1000, y: 1000}
+  fenceSprites:
+  - {fileID: 21300000, guid: 7b2d56efef9842749ad644f8e78c69de, type: 3}
+  - {fileID: 21300000, guid: 14a7f0e6469633b448debd48f9516201, type: 3}
+  - {fileID: 21300000, guid: edfa859870109e74a831f0d5fa99b9cf, type: 3}
+  fenceSeed: 1
+  baseShip: {fileID: 334198196256985635, guid: 8ec158b2012616d43abd009988bfc4b6, type: 3}
+  baseShipWidth: 2
+  roadStraight: {fileID: 21300000, guid: 2903e7c428517f445b0754707f1098f4, type: 3}
+  roadTurn: {fileID: 21300000, guid: 3507bb6e725f348479b5625e67055e0e, type: 3}
+  roadJunction: {fileID: 21300000, guid: 6265936ff3f1fa74ca5cf330754114d9, type: 3}
+  towerShotSound: {fileID: 8300000, guid: 35e669263fe9e9b4eb376c3ca1ab648e, type: 3}
+  towerShotVolume: 0.5
+  towerShotMinInterval: 0.06
+  enemyDeathSound: {fileID: 8300000, guid: b669dbd938b95334095490338c284db7, type: 3}
+  enemyDeathVolume: 0.8

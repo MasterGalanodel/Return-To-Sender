@@ -24,16 +24,44 @@ namespace TD
             move.Enable();
         }
 
-        // Reads directional movement input each frame and advances the player position.
+        private const float IdleFps = 6, WalkFps = 10;
+        private SpriteRenderer body;
+        private Sprite[] idleFrames, walkFrames, upFrames;
+
+        // Supplies the animation clips; any missing clip falls back to the idle frames.
+        public void SetAnimation(Sprite[] idle, Sprite[] walk, Sprite[] up)
+        {
+            body = GetComponent<SpriteRenderer>();
+            idleFrames = idle;
+            walkFrames = walk != null && walk.Length > 0 ? walk : idle;
+            upFrames = up != null && up.Length > 0 ? up : walkFrames;
+        }
+
+        // Reads directional movement input each frame, advances the player position, and picks the
+        // animation from how far the player actually moved (so pushing into a wall shows idle).
         private void Update()
         {
             LastInput = move.ReadValue<Vector2>();
+            Vector3 before = transform.position;
             MoveStep(LastInput, Time.deltaTime);
+            Animate(transform.position - before);
+        }
+
+        // Up shows the back view; down, left and right share the front-facing walk.
+        private void Animate(Vector3 moved)
+        {
+            if (!body || idleFrames == null || idleFrames.Length == 0) return;
+            bool moving = moved.sqrMagnitude > 1e-8f;
+            Sprite[] frames = !moving ? idleFrames : moved.y > Mathf.Abs(moved.x) ? upFrames : walkFrames;
+            int index = (int)(Time.time * (moving ? WalkFps : IdleFps)) % frames.Length;
+            if (frames[index]) body.sprite = frames[index];
         }
 
         // Moves the player in small steps and tests X/Y axes independently to allow smooth sliding along hex boundaries.
         public void MoveStep(Vector2 input, float deltaTime)
         {
+            var session = Shared.HUD.GameSession.Instance;
+            if (session && !session.IsPhaseActive(Shared.HUD.GameSession.PlayPhase.TowerDefense)) return;
             Vector2 displacement = Vector2.ClampMagnitude(input, 1) * settings.playerSpeed * Mathf.Max(0, deltaTime);
             int steps = Mathf.Max(1, Mathf.CeilToInt(displacement.magnitude / .15f));
             Vector3 step = new Vector3(displacement.x, displacement.y, 0) / steps;

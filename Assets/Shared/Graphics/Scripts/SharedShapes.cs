@@ -8,8 +8,39 @@ namespace Shared.Graphics
         public Sprite circle;
         public Sprite triangle;
         public Sprite hex;
+        [Header("Gameplay sprites")]
+        public Sprite player;
+        [Tooltip("TD player standing still (character_sprite_sheet row 2, columns 1-4).")]
+        public Sprite[] playerIdleFrames;
+        [Tooltip("TD player walking down, left or right (row 2, columns 5-8).")]
+        public Sprite[] playerWalkFrames;
+        [Tooltip("TD player walking up (row 3, column 1).")]
+        public Sprite[] playerUpFrames;
+        public Sprite enemy;
+        [Tooltip("TD enemy walk loop, art facing right (enemy1_sprite_sheet row 1: slices 0 and 2-8).")]
+        public Sprite[] enemyFrames;
+        public Sprite tower;
+        [Header("Enemy rewards")]
+        public Sprite buildReward;
+        public Sprite claw;
+        [Header("Effects")]
+        [Tooltip("Enemy destroy animation, in play order (destroyed_sprite_sheet_0 .. _6).")]
+        public Sprite[] destroyedFrames;
         public Material unlitMaterial;
         public Material terrainMaterial;
+
+        // Imported art has different pixel sizes; retain aspect ratios while matching gameplay dimensions.
+        public static float ActorScale(Sprite sprite, float height)
+        {
+            if (!sprite) throw new System.InvalidOperationException("A gameplay sprite is missing. Run Tools/Shared/Graphics/Assign Gameplay Sprites.");
+            return height / sprite.bounds.size.y;
+        }
+
+        public SpriteRenderer CreateActor(string objectName, Sprite sprite, Vector3 position,
+            float height, int sortingOrder, Transform parent)
+        {
+            return Create(objectName, sprite, Color.white, position, ActorScale(sprite, height), sortingOrder, parent);
+        }
 
         public SpriteRenderer Create(string objectName, Sprite sprite, Color color,
             Vector3 position, float size, int sortingOrder, Transform parent)

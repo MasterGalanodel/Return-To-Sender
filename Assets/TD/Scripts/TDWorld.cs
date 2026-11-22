@@ -1,4 +1,5 @@
 using Shared.Graphics;
+using Shared.HUD;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,49 +10,134 @@ namespace TD
     {
         private readonly List<TDEnemy> enemies = new List<TDEnemy>();
         private readonly List<TDProjectile> projectiles = new List<TDProjectile>();
+        private readonly List<TDRewardPickup> rewards = new List<TDRewardPickup>();
+        private readonly TDMap map;
+        public IReadOnlyList<TDRewardPickup> Rewards => rewards;
         public IReadOnlyList<TDProjectile> Projectiles => projectiles;
         public IReadOnlyList<TDEnemy> Enemies => enemies;
         public TDSettings Settings { get; }
         public SharedShapes Shapes { get; }
         public Transform ActorsRoot { get; }
-        public Vector3[] Route { get; }
+        private readonly List<Vector2Int> spawnCells;
+        private readonly List<Vector2Int> baseCells;
         public int SpawnedCount { get; private set; }
         public int ExitedCount { get; private set; }
         public int KilledCount { get; private set; }
         public int ShotsFired { get; private set; }
         public int Hits { get; private set; }
+        public bool CanSimulate => !GameSession.Instance || GameSession.Instance.IsPhaseActive(GameSession.PlayPhase.TowerDefense);
 
-        // Initializes the simulation world with configuration settings, shape renderers, and the enemy route.
-        public TDWorld(TDSettings settings, SharedShapes shapes, Transform actorsRoot, Vector3[] route)
-        { Settings=settings; Shapes=shapes; ActorsRoot=actorsRoot; Route=route; }
+        // Initializes the simulation world with configuration settings, shape renderers, and the map enemies cross.
+        public TDWorld(TDSettings settings, SharedShapes shapes, Transform actorsRoot, TDMap hexMap)
+        {
+            Settings=settings; Shapes=shapes; ActorsRoot=actorsRoot; map=hexMap;
+            baseCells=map.BaseCells();
+            spawnCells=map.EdgeCells().FindAll(cell => map.TerrainAt(cell) != TDMap.Base && map.TerrainAt(cell) != TDMap.Fence);
+            if (baseCells.Count == 0) throw new System.InvalidOperationException("TD: the map has no B (Base) tiles; gameplay startup is disabled.");
+            if (spawnCells.Count == 0) throw new System.InvalidOperationException("TD: every map-edge tile is Base or Fence, so enemies have nowhere to spawn.");
+        }
 
-        // Instantiates and tracks a new enemy actor at the beginning of the road route.
+        // True when the world position lies on a Base cell.
+        public bool IsBase(Vector3 world) => map.TerrainAt(map.WorldToLogical(world)) == TDMap.Base;
+
+        // Spawns an enemy on a random map-edge cell, walking straight at a random Base cell.
         public TDEnemy SpawnEnemy()
         {
-            var renderer = Shapes.Create("Enemy", Shapes.circle, Color.black, Route[0], .4f, 20, ActorsRoot);
+            Vector3 start = map.Center(spawnCells[Random.Range(0, spawnCells.Count)]);
+            Vector3 target = map.Center(baseCells[Random.Range(0, baseCells.Count)]);
+            return SpawnEnemy(start, target);
+        }
+
+        // Instantiates and tracks a new enemy actor walking straight from start toward target.
+        public TDEnemy SpawnEnemy(Vector3 start, Vector3 target)
+        {
+            // Scale once from the first walk frame so every frame of the loop shares one size.
+            Sprite look = Shapes.enemyFrames != null && Shapes.enemyFrames.Length > 0 && Shapes.enemyFrames[0] ? Shapes.enemyFrames[0] : Shapes.enemy;
+            var renderer = Shapes.CreateActor("Enemy", look, start, .4f, 20, ActorsRoot);
             var enemy = renderer.gameObject.AddComponent<TDEnemy>();
-            enemy.Initialize(this);
+            enemy.Initialize(this, start, target);
             enemies.Add(enemy);
             SpawnedCount++;
             return enemy;
         }
 
         // Removes an enemy from active tracking and increments exited or killed counters.
-        public void RemoveEnemy(TDEnemy enemy, bool exited)
+        // An exited enemy reached the Base and costs 1 HP.
+        public void RemoveEnemy(TDEnemy enemy, bool exited, bool killed = false)
         {
             if (!enemies.Remove(enemy)) return;
-            if (exited) ExitedCount++; else KilledCount++;
+            if (exited)
+            {
+                ExitedCount++;
+                if (CanSimulate && GameSession.Instance) GameSession.Instance.Damage(1);
+            }
+            else if (killed)
+            {
+                KilledCount++;
+                if (!CanSimulate) return;
+                TDEnemyExplosion.Spawn(this, enemy.transform.position);
+                Shared.Audio.SharedAudio.PlaySfx(Settings.enemyDeathSound, Settings.enemyDeathVolume, .03f);
+                // The first kill of each TD phase always drops a token; later kills roll the day's chance.
+                float dropChance = Settings.BuildRewardDropChanceOnDay(GameSession.Instance ? GameSession.Instance.Day : 1);
+                if (KilledCount == 1 || dropChance >= 1 || (dropChance > 0 && Random.value < dropChance))
+                    SpawnBuildReward(enemy.transform.position);
+            }
         }
 
-        // Instantiates and tracks a homing projectile directed at a specific target enemy.
-        public TDProjectile FireProjectile(Vector3 position, TDEnemy target)
+        public TDRewardPickup SpawnBuildReward(Vector3 deathPosition)
         {
-            var renderer=Shapes.Create("Projectile",Shapes.circle,Color.yellow,position,.13f,25,ActorsRoot);
+            if (!CanSimulate) return null;
+            Vector3 position = deathPosition;
+            // Reject off-map scatter so every drop remains reachable by the player.
+            for (int attempt = 0; attempt < 32; attempt++)
+            {
+                Vector2 offset = Random.insideUnitCircle * Settings.buildRewardDropRadius;
+                Vector3 candidate = deathPosition + new Vector3(offset.x, offset.y, 0);
+                if (!map || map.ContainsWorld(candidate)) { position = candidate; break; }
+            }
+            var root = new GameObject("Build Reward (+1)");
+            root.transform.SetParent(ActorsRoot, false);
+            root.transform.position = position;
+            var reward = root.AddComponent<TDRewardPickup>();
+            reward.Initialize(this);
+            rewards.Add(reward);
+            return reward;
+        }
+
+        public void RemoveReward(TDRewardPickup reward) { rewards.Remove(reward); }
+
+        // Instantiates and tracks a homing projectile directed at a specific target enemy.
+        // A shot from a splash level is tinted orange and blasts the area it hits.
+        public TDProjectile FireProjectile(Vector3 position, TDEnemy target, TDSettings.TowerLevel source = null)
+        {
+            bool splash = source != null && source.splashRadius > 0;
+            var renderer=Shapes.Create("Projectile",Shapes.circle,splash ? SplashColor : Color.yellow,position,splash ? .16f : .13f,25,ActorsRoot);
             var projectile=renderer.gameObject.AddComponent<TDProjectile>();
-            projectile.Initialize(this,target);
+            projectile.Initialize(this,target,source);
             projectiles.Add(projectile);
             ShotsFired++;
             return projectile;
+        }
+
+        public static readonly Color SplashColor = new Color(1f, .55f, .15f);
+        private readonly List<TDEnemy> splashBuffer = new List<TDEnemy>();
+
+        // Plays the splash burst and damages every living enemy (except the one hit directly) touching the radius.
+        public void Splash(Vector3 center, float radius, float damage, TDEnemy directHit, int particles)
+        {
+            if (!CanSimulate) return;
+            TDSplashBurst.Spawn(this, center, radius, particles);
+            if (damage <= 0) return;
+            // Copy first: kills remove enemies from the live list.
+            splashBuffer.Clear();
+            foreach (var enemy in enemies)
+            {
+                if (!enemy || !enemy.IsAlive || enemy == directHit) continue;
+                float reach = radius + TDEnemy.Radius;
+                if (((Vector2)(enemy.transform.position - center)).sqrMagnitude <= reach * reach) splashBuffer.Add(enemy);
+            }
+            foreach (var enemy in splashBuffer) if (enemy) enemy.ApplyDamage(damage);
+            splashBuffer.Clear();
         }
 
         // Increments the total count of successful projectile impacts.
@@ -61,6 +147,19 @@ namespace TD
         public void RemoveProjectile(TDProjectile projectile) { projectiles.Remove(projectile); }
 
         // Clears all active enemy and projectile tracking lists upon world teardown.
-        public void Dispose() { enemies.Clear(); projectiles.Clear(); }
+        public void Dispose() { enemies.Clear(); projectiles.Clear(); rewards.Clear(); }
+
+        public void Retreat()
+        {
+            foreach (var enemy in enemies)
+                if (enemy) { enemy.gameObject.SetActive(false); Object.Destroy(enemy.gameObject); }
+            foreach (var projectile in projectiles)
+                if (projectile) { projectile.gameObject.SetActive(false); Object.Destroy(projectile.gameObject); }
+            foreach (var reward in rewards)
+                if (reward) { reward.gameObject.SetActive(false); Object.Destroy(reward.gameObject); }
+            enemies.Clear();
+            projectiles.Clear();
+            rewards.Clear();
+        }
     }
 }
